@@ -1,482 +1,1456 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VibeStream | Cinematic Feed</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <style>
-        /* --- 1. CORE & RESET --- */
-        :root { 
-            --primary: #fe2c55; 
-            --whatsapp: #25D366;
-            --facebook: #1877F2;
-            --tiktok: #000000;
-            --bg: #000; 
-            --glass-bg: rgba(30, 30, 34, 0.65);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --glass-glow: rgba(255, 255, 255, 0.15);
-        }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover, user-scalable=no" />
+<meta name="theme-color" content="#08080c" />
+<title>VibeStream | Feed &amp; Stories</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   0. RESET
+   ============================================================ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        
-        body { 
-            background: var(--bg); color: #fff; 
-            height: 100dvh; overflow: hidden; 
-            position: relative;
-        }
+/* ============================================================
+   1. DESIGN TOKENS
+   Single source of truth — shared by the feed AND the stories
+   layer so the whole app reads as one product, not two stitched
+   together. Built on the Instagram five-stop brand ramp.
+   ============================================================ */
+:root {
+  --grad-1: #4f5bd5;
+  --grad-2: #962fbf;
+  --grad-3: #d62976;
+  --grad-4: #fa7e1e;
+  --grad-5: #feda75;
+  --gradient-story: conic-gradient(from 0deg, var(--grad-1), var(--grad-2), var(--grad-3), var(--grad-4), var(--grad-5), var(--grad-1));
+  --gradient-linear: linear-gradient(135deg, var(--grad-5), var(--grad-4), var(--grad-3), var(--grad-2), var(--grad-1));
 
-        /* --- 2. CINEMATIC FEED --- */
-        #feedContainer { 
-            height: 100%;
-            overflow-y: scroll; 
-            scroll-snap-type: y mandatory;
-            scrollbar-width: none; 
-            -webkit-overflow-scrolling: touch;
-            position: relative; 
-            z-index: 1;
-        }
-        #feedContainer::-webkit-scrollbar { display: none; }
+  --whatsapp: #25D366;
+  --facebook: #1877F2;
+  --tiktok-ink: #000000;
 
-        .card { 
-            width: 100%; height: 100%; 
-            scroll-snap-align: start; scroll-snap-stop: always;
-            position: relative; 
-            display: flex; align-items: center; justify-content: center;
-            background: #09090b; 
-            overflow: hidden;
-        }
+  --bg-void: #050508;
+  --bg-app: #000000;
+  --surface: #16161f;
+  --surface-2: #1d1d29;
+  --glass-bg: rgba(255, 255, 255, 0.07);
+  --glass-bg-strong: rgba(255, 255, 255, 0.13);
+  --glass-border: rgba(255, 255, 255, 0.12);
 
-        .media { 
-            width: 100%; height: 100%; 
-            object-fit: cover; position: absolute; inset: 0;
-            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
-            opacity: 0;
-            animation: fadeInMedia 0.8s ease forwards;
-        }
+  --text-1: #ffffff;
+  --text-2: rgba(255, 255, 255, 0.7);
+  --text-3: rgba(255, 255, 255, 0.44);
 
-        @keyframes fadeInMedia { to { opacity: 1; } }
+  --fs-2xs: 10px; --fs-xs: 11px; --fs-sm: 12.5px; --fs-base: 14px;
+  --fs-md: 15px; --fs-lg: 17px; --fs-xl: 20px; --fs-2xl: 23px;
+  --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700; --fw-black: 800;
 
-        /* Actions overlay */
-        .card-info {
-            position: absolute;
-            bottom: 120px; 
-            left: 20px;
-            right: 90px;
-            z-index: 10;
-            pointer-events: none;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-        }
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px;
 
-        .card-info h3 { font-size: 1.2rem; margin-bottom: 5px; font-weight: 600; letter-spacing: 0.5px; }
-        .card-info p { font-size: 0.9rem; color: rgba(255,255,255,0.8); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  --radius-sm: 10px; --radius-md: 16px; --radius-lg: 24px; --radius-xl: 32px; --radius-full: 999px;
 
-        .actions {
-            position: absolute; 
-            bottom: 120px; right: 15px;
-            display: flex; flex-direction: column; gap: 16px; 
-            z-index: 10;
-        }
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 10px 32px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 25px 60px rgba(0, 0, 0, 0.6);
 
-        .action-btn {
-            width: 52px; height: 52px; 
-            border-radius: 50%; border: none;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 22px; color: white; cursor: pointer;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5); 
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.15);
-        }
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 150ms; --dur-base: 280ms; --dur-slow: 500ms;
 
-        .action-btn:active { transform: scale(0.9); }
-        
-        .btn-wa { background: rgba(37, 211, 102, 0.25); color: #25D366; border-color: rgba(37, 211, 102, 0.4); }
-        .btn-wa:hover { background: var(--whatsapp); color: #fff; }
-        
-        .btn-fb { background: rgba(24, 119, 242, 0.25); color: #1877F2; border-color: rgba(24, 119, 242, 0.4); }
-        .btn-fb:hover { background: var(--facebook); color: #fff; }
-        
-        .btn-tt { background: rgba(0, 0, 0, 0.6); color: #ffffff; border-color: rgba(255, 255, 255, 0.3); box-shadow: 0 4px 15px rgba(254, 44, 85, 0.3); }
-        .btn-tt:hover { background: var(--tiktok); color: #fff; border-color: var(--primary); }
+  --ring-size: 68px;
+  --story-duration: 5000ms;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
 
-        /* Loader & Scroll Indicator */
-        .scroll-trigger { height: 10px; width: 100%; position: absolute; bottom: 0; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
 
-        /* --- 3. GEMINI-STYLE SEARCH ISLAND --- */
-        #searchIsland {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 92%;
-            max-width: 500px;
-            height: 60px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(24px) saturate(180%);
-            -webkit-backdrop-filter: blur(24px) saturate(180%);
-            border: 1px solid var(--glass-border);
-            border-radius: 30px;
-            display: flex;
-            align-items: center;
-            padding: 0 10px 0 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.05);
-            z-index: 50;
-            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-        }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-app);
+  color: var(--text-1);
+  height: 100dvh;
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+}
 
-        #searchIsland:focus-within {
-            background: rgba(40, 40, 45, 0.8);
-            border-color: var(--glass-glow);
-            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 255, 255, 0.05);
-            transform: translateX(-50%) translateY(-2px);
-        }
+button, input, textarea { font-family: inherit; }
+:focus-visible { outline: 2px solid var(--grad-4); outline-offset: 2px; }
 
-        .search-icon { color: rgba(255, 255, 255, 0.5); font-size: 18px; transition: color 0.3s; }
-        #searchIsland:focus-within .search-icon { color: #fff; }
+.app { position: relative; width: 100%; height: 100dvh; overflow: hidden; isolation: isolate; }
 
-        #searchInput {
-            flex: 1; height: 100%;
-            background: transparent; border: none;
-            padding: 0 15px; color: white;
-            font-size: 16px; outline: none;
-        }
+/* ============================================================
+   2. MAIN FEED  (base screen)
+   ============================================================ */
+#feedContainer {
+  height: 100%;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+  z-index: 1;
+}
+#feedContainer::-webkit-scrollbar { display: none; }
 
-        #searchInput::placeholder { color: rgba(255, 255, 255, 0.4); }
+.card {
+  width: 100%; height: 100%;
+  scroll-snap-align: start; scroll-snap-stop: always;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  background: #09090b;
+  overflow: hidden;
+}
 
-        .search-action-btn {
-            width: 40px; height: 40px;
-            border-radius: 50%; border: none;
-            background: rgba(255,255,255,0.05);
-            color: white; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            transition: all 0.3s;
-            opacity: 0; pointer-events: none;
-            transform: scale(0.8);
-        }
+.card .media {
+  width: 100%; height: 100%;
+  object-fit: cover; position: absolute; inset: 0;
+  opacity: 0;
+  animation: fadeInMedia 0.7s var(--ease-smooth) forwards;
+  background: linear-gradient(160deg, var(--surface), var(--surface-2));
+  touch-action: manipulation;
+}
+@keyframes fadeInMedia { to { opacity: 1; } }
 
-        .search-action-btn.active {
-            opacity: 1; pointer-events: all; transform: scale(1);
-        }
+/* -- glassmorphic center play badge · double-tap-to-open affordance -- */
+.play-badge {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 64px; height: 64px; border-radius: 50%; z-index: 5;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 21px;
+  background: var(--glass-bg-strong);
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.22);
+  pointer-events: none;
+  animation: playBadgeBreathe 3.4s ease-in-out infinite;
+}
+.play-badge i { margin-left: 3px; }
+@keyframes playBadgeBreathe {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.85; }
+  50% { transform: translate(-50%, -50%) scale(1.07); opacity: 1; }
+}
+.play-badge.pulse { animation: playBadgeTap 0.45s var(--ease-spring); }
+@keyframes playBadgeTap {
+  0% { transform: translate(-50%, -50%) scale(1); }
+  45% { transform: translate(-50%, -50%) scale(1.42); box-shadow: 0 10px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.3); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
 
-        .island-loader {
-            width: 20px; height: 20px;
-            border: 2px solid rgba(255,255,255,0.1);
-            border-top-color: #fff; border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            display: none;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
+.card-scrim {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: linear-gradient(180deg, rgba(0,0,0,0.35) 0%, transparent 22%, transparent 55%, rgba(0,0,0,0.7) 100%);
+}
+
+.card-info {
+  position: absolute; bottom: calc(118px + var(--safe-bottom)); left: 20px; right: 92px; z-index: 10;
+  pointer-events: none;
+  text-shadow: 0 2px 14px rgba(0,0,0,0.75);
+}
+.card-info h3 { font-size: var(--fs-lg); font-weight: var(--fw-bold); letter-spacing: 0.2px; margin-bottom: 5px; }
+.card-info p { font-size: var(--fs-base); color: var(--text-2); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+.actions { position: absolute; bottom: calc(118px + var(--safe-bottom)); right: 14px; display: flex; flex-direction: column; gap: 15px; z-index: 10; }
+
+.action-btn {
+  width: 50px; height: 50px; border-radius: 50%; border: 1px solid var(--glass-border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: #fff; cursor: pointer;
+  background: var(--glass-bg); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--dur-base) var(--ease-spring), background var(--dur-base) var(--ease-smooth), box-shadow var(--dur-base);
+}
+.action-btn:hover { transform: translateY(-2px) scale(1.05); }
+.action-btn:active { transform: scale(0.9); }
+.btn-wa { background: rgba(37, 211, 102, 0.22); color: var(--whatsapp); border-color: rgba(37, 211, 102, 0.38); }
+.btn-wa:hover { background: var(--whatsapp); color: #fff; box-shadow: 0 6px 24px rgba(37,211,102,0.4); }
+.btn-fb { background: rgba(24, 119, 242, 0.22); color: var(--facebook); border-color: rgba(24, 119, 242, 0.38); }
+.btn-fb:hover { background: var(--facebook); color: #fff; box-shadow: 0 6px 24px rgba(24,119,242,0.4); }
+.btn-tt { background: rgba(255,255,255,0.08); color: #fff; border-color: rgba(255,255,255,0.28); }
+.btn-tt:hover { background: linear-gradient(135deg, var(--grad-3), var(--grad-2)); box-shadow: 0 6px 24px rgba(214,41,118,0.4); }
+
+.scroll-trigger { height: 10px; width: 100%; position: absolute; bottom: 0; }
+
+.empty-state { flex-direction: column; gap: 12px; }
+.empty-state i { font-size: 2.4rem; color: rgba(255,255,255,0.16); }
+.empty-state p { color: var(--text-3); font-size: var(--fs-base); }
+
+/* ============================================================
+   3. STORIES HEADER  (pinned overlay at the top of the feed)
+   ============================================================ */
+.stories-header {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 40;
+  padding-top: var(--safe-top);
+  background: linear-gradient(180deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+  pointer-events: none;
+}
+.stories-header > * { pointer-events: auto; }
+
+.brand-row {
+  padding: 12px 16px 4px; display: flex; align-items: center; justify-content: space-between;
+}
+.brand-title {
+  font-size: var(--fs-xl); font-weight: var(--fw-black); letter-spacing: -0.4px;
+  background: linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.6));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.header-icon-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 14px; cursor: pointer;
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  transition: transform var(--dur-base) var(--ease-spring), background var(--dur-base);
+}
+.header-icon-btn:hover { background: var(--glass-bg-strong); transform: scale(1.08); }
+.header-icon-btn:active { transform: scale(0.9); }
+.header-icon-btn.is-admin { color: var(--grad-5); border-color: rgba(254, 218, 117, 0.5); box-shadow: 0 0 14px rgba(254, 218, 117, 0.25); }
+
+.stories-row {
+  padding: 6px 14px 14px; display: flex; gap: 14px; overflow-x: auto; overflow-y: visible;
+  scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.stories-row::-webkit-scrollbar { display: none; }
+
+.story-avatar-wrap {
+  scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  cursor: pointer; flex-shrink: 0; width: var(--ring-size);
+  transition: transform var(--dur-base) var(--ease-spring);
+  background: none; border: none; padding: 0;
+}
+.story-avatar-wrap:active { transform: scale(0.9); }
+.story-avatar-wrap:hover { transform: translateY(-3px); }
+
+.story-ring { width: var(--ring-size); height: var(--ring-size); border-radius: 50%; position: relative; }
+.story-ring::before {
+  content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--surface-2);
+}
+.story-ring.has-unseen::before {
+  background: var(--gradient-story); animation: ringSpin 5.5s linear infinite;
+  box-shadow: 0 0 14px rgba(150,47,191,0.3), 0 0 30px rgba(214,41,118,0.14);
+}
+@keyframes ringSpin { to { transform: rotate(360deg); } }
+
+.ring-bg {
+  position: absolute; inset: 4px; border-radius: 50%; overflow: hidden; background: #1a1a24;
+  box-shadow: 0 0 0 3px var(--bg-app); z-index: 1;
+}
+.ring-bg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ring-bg .initials { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: var(--fw-bold); font-size: 19px; color: #fff; }
+
+.story-avatar-wrap .username {
+  font-size: var(--fs-2xs); font-weight: var(--fw-medium); color: var(--text-2);
+  max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center;
+}
+.story-avatar-wrap:hover .username { color: #fff; }
+
+.story-avatar-wrap.add-story .story-ring::before { background: transparent; }
+.story-avatar-wrap.add-story .story-ring { animation: addIdlePulse 4.5s ease-in-out infinite; }
+@keyframes addIdlePulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+.story-avatar-wrap.add-story .add-icon {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: linear-gradient(135deg, var(--grad-2), var(--grad-3));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; color: #fff; box-shadow: 0 0 22px rgba(150,47,191,0.4);
+  box-shadow: 0 0 0 3px var(--bg-app), 0 0 22px rgba(150,47,191,0.4);
+}
+
+/* ============================================================
+   4. STORY VIEWER  (full-screen overlay)
+   ============================================================ */
+.story-viewer {
+  position: absolute; inset: 0; z-index: 100; background: #000;
+  display: none; flex-direction: column;
+  transition: transform var(--dur-slow) var(--ease-smooth), opacity var(--dur-slow) var(--ease-smooth);
+}
+.story-viewer.open { display: flex; }
+
+.viewer-progress-row {
+  position: absolute; top: calc(10px + var(--safe-top)); left: 10px; right: 10px; z-index: 20;
+  display: flex; gap: 4px;
+}
+.progress-track { flex: 1; height: 2.5px; border-radius: var(--radius-full); background: rgba(255,255,255,0.28); overflow: hidden; }
+.progress-fill { height: 100%; width: 0%; background: #fff; border-radius: inherit; }
+.progress-track.complete .progress-fill { width: 100% !important; }
+
+.viewer-header {
+  position: absolute; top: calc(24px + var(--safe-top)); left: 14px; right: 14px; z-index: 20;
+  display: flex; align-items: center; gap: 10px;
+}
+.viewer-avatar { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; background: var(--surface-2); flex-shrink: 0; box-shadow: 0 0 0 1.5px rgba(255,255,255,0.3); }
+.viewer-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.viewer-username { font-size: var(--fs-sm); font-weight: var(--fw-semibold); flex: 1; text-shadow: 0 1px 6px rgba(0,0,0,0.6); }
+.viewer-close {
+  width: 36px; height: 36px; border-radius: 50%; background: rgba(0,0,0,0.3); border: none; color: #fff;
+  font-size: 17px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+  backdrop-filter: blur(10px); transition: transform var(--dur-base) var(--ease-spring), background var(--dur-base);
+}
+.viewer-close:hover { background: rgba(255,255,255,0.16); transform: rotate(90deg); }
+
+.viewer-stage { position: relative; flex: 1; overflow: hidden; background: #000; }
+.viewer-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.viewer-scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 20%, transparent 60%, rgba(0,0,0,0.65) 100%); pointer-events: none; }
+
+.story-caption {
+  position: absolute; left: 18px; right: 18px; bottom: 96px; z-index: 8;
+  font-size: var(--fs-base); line-height: 1.5; color: #fff; text-shadow: 0 2px 12px rgba(0,0,0,0.8);
+  opacity: 0; transform: translateY(8px);
+  transition: opacity var(--dur-slow) var(--ease-smooth), transform var(--dur-slow) var(--ease-smooth);
+  pointer-events: none;
+}
+.story-caption.show { opacity: 1; transform: translateY(0); }
+.story-caption .cap-title { font-weight: var(--fw-bold); font-size: var(--fs-lg); margin-bottom: 4px; display: block; }
+
+.hold-indicator {
+  position: absolute; left: 50%; top: 50%; z-index: 7; width: 54px; height: 54px; border-radius: 50%;
+  background: rgba(0,0,0,0.4); backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center; font-size: 19px; color: #fff;
+  opacity: 0; transform: translate(-50%, -50%) scale(0.7);
+  transition: opacity var(--dur-fast), transform var(--dur-fast) var(--ease-spring); pointer-events: none;
+}
+.story-viewer.holding .hold-indicator { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+.tap-zones { position: absolute; inset: 0; z-index: 6; display: flex; }
+.tap-zones .zone { flex: 1; touch-action: manipulation; }
+.zone-left { flex: 0 0 30%; cursor: w-resize; }
+.zone-right { flex: 0 0 30%; cursor: e-resize; }
+.zone-center { flex: 1; cursor: default; }
+
+.viewer-actions {
+  position: relative; z-index: 10; flex-shrink: 0;
+  display: flex; gap: 12px; padding: 10px 16px calc(14px + var(--safe-bottom));
+}
+.viewer-actions .action-btn { width: 46px; height: 46px; font-size: 18px; }
+.viewer-actions .va-label { flex: 1; display: flex; align-items: center; color: var(--text-3); font-size: var(--fs-xs); }
+
+.heart-burst {
+  position: absolute; z-index: 20; pointer-events: none; font-size: 56px; color: #fff;
+  opacity: 0; transform: scale(0); animation: heartPop 0.85s var(--ease-spring) forwards;
+}
+@keyframes heartPop { 0% { opacity: 0; transform: scale(0.3) translateY(0); } 25% { opacity: 1; transform: scale(1.15); } 55% { transform: scale(0.95); } 100% { opacity: 0; transform: scale(1.05) translateY(-26px); } }
+
+/* ============================================================
+   5. SHARED OVERLAY SHELL  (upload / admin login / promo)
+   ============================================================ */
+.sheet-overlay {
+  position: absolute; inset: 0; z-index: 200;
+  background: rgba(4,4,8,0.8); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+  display: none; align-items: center; justify-content: center; padding: 30px;
+}
+.sheet-overlay.active { display: flex; }
+.sheet-card {
+  width: 100%; max-width: 320px; display: flex; flex-direction: column; align-items: center; gap: 16px;
+  position: relative; animation: sheetIn var(--dur-slow) var(--ease-spring);
+}
+@keyframes sheetIn { from { opacity: 0; transform: scale(0.94) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.sheet-close {
+  position: absolute; top: -6px; right: -6px; z-index: 2;
+  background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 50%;
+  width: 38px; height: 38px; color: #fff; font-size: 17px; cursor: pointer;
+  backdrop-filter: blur(10px); transition: transform var(--dur-base) var(--ease-spring), background var(--dur-base);
+}
+.sheet-close:hover { background: var(--glass-bg-strong); transform: rotate(90deg); }
+
+.sheet-icon {
+  width: 74px; height: 74px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--grad-2), var(--grad-3));
+  display: flex; align-items: center; justify-content: center; font-size: 30px; color: #fff;
+  box-shadow: 0 0 50px rgba(150,47,191,0.32); animation: pulseGlow 2.2s ease-in-out infinite;
+}
+.sheet-icon.wa-tone { background: linear-gradient(135deg, #2fd480, var(--whatsapp)); box-shadow: 0 0 50px rgba(37,211,102,0.32); }
+@keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 26px rgba(150,47,191,0.2); } 50% { box-shadow: 0 0 56px rgba(150,47,191,0.48); } }
+
+.sheet-card h2 { font-size: var(--fs-xl); font-weight: var(--fw-bold); letter-spacing: -0.3px; text-align: center; }
+.sheet-card p.sub { color: var(--text-3); font-size: var(--fs-base); text-align: center; line-height: 1.6; }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--grad-2), var(--grad-3));
+  border: none; padding: 14px 30px; border-radius: var(--radius-full); width: 100%;
+  color: #fff; font-size: var(--fs-md); font-weight: var(--fw-semibold); cursor: pointer;
+  box-shadow: 0 4px 28px rgba(150,47,191,0.32);
+  transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base);
+  position: relative; overflow: hidden;
+}
+.btn-primary::after {
+  content: ''; position: absolute; top: -50%; left: -60%; width: 40%; height: 200%;
+  background: linear-gradient(115deg, transparent, rgba(255,255,255,0.25), transparent); transform: skewX(-20deg);
+}
+.btn-primary:hover { transform: scale(1.03); box-shadow: 0 8px 36px rgba(150,47,191,0.42); }
+.btn-primary:hover::after { animation: shine 0.9s; }
+@keyframes shine { from { left: -60%; } to { left: 140%; } }
+.btn-primary:active { transform: scale(0.96); }
+.btn-primary.wa-tone { background: linear-gradient(135deg, #2fd480, var(--whatsapp)); box-shadow: 0 4px 28px rgba(37,211,102,0.32); }
+.btn-primary.wa-tone:hover { box-shadow: 0 8px 36px rgba(37,211,102,0.42); }
+.btn-primary:disabled { opacity: 0.5; pointer-events: none; }
+
+.btn-secondary {
+  width: 100%; background: var(--glass-bg); border: 1px solid var(--glass-border); color: #fff;
+  padding: 12px; border-radius: var(--radius-full); font-size: var(--fs-sm); font-weight: var(--fw-semibold);
+  cursor: pointer; transition: background var(--dur-fast);
+}
+.btn-secondary:hover { background: var(--glass-bg-strong); }
+
+.link-btn {
+  background: none; border: none; color: var(--text-3); font-size: var(--fs-sm); cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px; padding: 4px;
+}
+.link-btn:hover { color: #fff; }
+
+.field {
+  width: 100%; display: flex; flex-direction: column; gap: 6px; text-align: left;
+}
+.field label { font-size: var(--fs-2xs); color: var(--text-3); font-weight: var(--fw-medium); letter-spacing: 0.3px; text-transform: uppercase; padding-left: 4px; }
+.field .input-wrap { position: relative; display: flex; align-items: center; }
+.field input, .field textarea {
+  width: 100%; background: var(--glass-bg); border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md); padding: 12px 14px; color: #fff; font-size: var(--fs-base);
+  transition: border-color var(--dur-base), background var(--dur-base);
+}
+.field input::placeholder, .field textarea::placeholder { color: var(--text-3); }
+.field input:focus, .field textarea:focus { outline: none; border-color: rgba(255,255,255,0.32); background: var(--glass-bg-strong); }
+.field textarea { resize: none; min-height: 64px; font-family: inherit; }
+.field .peek-btn {
+  position: absolute; right: 10px; background: none; border: none; color: var(--text-3); cursor: pointer; font-size: 14px; padding: 6px;
+}
+.field.error input { border-color: var(--grad-3); }
+.field-error-msg { font-size: var(--fs-2xs); color: var(--grad-3); padding-left: 4px; min-height: 14px; }
+
+/* -- upload preview step -- */
+.preview-frame {
+  position: relative; width: 100%; max-width: 190px; aspect-ratio: 9/16; margin: 0 auto;
+  border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-md); background: var(--surface);
+}
+.preview-frame img { width: 100%; height: 100%; object-fit: cover; transition: filter var(--dur-fast) ease; }
+
+.filter-row { display: flex; gap: 10px; overflow-x: auto; max-width: 100%; padding: 2px 4px 4px; scrollbar-width: none; }
+.filter-row::-webkit-scrollbar { display: none; }
+.filter-chip { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; background: none; border: none; }
+.filter-chip .swatch { width: 42px; height: 42px; border-radius: 50%; overflow: hidden; border: 2px solid transparent; transition: border-color var(--dur-fast), transform var(--dur-fast) var(--ease-spring); }
+.filter-chip .swatch img { width: 100%; height: 100%; object-fit: cover; }
+.filter-chip.active .swatch { border-color: var(--grad-4); transform: scale(1.08); }
+.filter-chip span { font-size: 9px; color: var(--text-3); font-weight: var(--fw-medium); }
+.filter-chip.active span { color: #fff; }
+
+.upload-drop-hint {
+  border: 1.5px dashed rgba(255,255,255,0.18); border-radius: var(--radius-lg); padding: 8px 16px;
+  font-size: var(--fs-2xs); color: var(--text-3); transition: all var(--dur-base); text-align: center; width: 100%;
+}
+.sheet-card.drag-active .upload-drop-hint { border-color: var(--grad-4); color: var(--grad-4); background: rgba(250,126,30,0.08); }
+#fileInput { display: none; }
+
+.step-actions { display: flex; gap: 10px; width: 100%; }
+.step-actions .btn-secondary { flex: 1; }
+.step-actions .btn-primary { flex: 1.4; padding: 12px; font-size: var(--fs-sm); }
+
+.admin-badge-row { display: flex; align-items: center; gap: 6px; font-size: var(--fs-2xs); color: var(--text-3); }
+.admin-badge-row i { color: var(--grad-5); }
+
+/* ============================================================
+   6. SEARCH ISLAND
+   ============================================================ */
+#searchIsland {
+  position: fixed; bottom: calc(24px + var(--safe-bottom)); left: 50%; transform: translateX(-50%);
+  width: 90%; max-width: 480px; height: 58px;
+  background: var(--glass-bg-strong); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border); border-radius: var(--radius-full);
+  display: flex; align-items: center; padding: 0 10px 0 20px;
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.06); z-index: 50;
+  transition: all var(--dur-slow) var(--ease-out-expo);
+}
+#searchIsland:focus-within { border-color: rgba(255,255,255,0.24); transform: translateX(-50%) translateY(-2px); box-shadow: var(--shadow-lg), 0 0 22px rgba(150,47,191,0.14); }
+.search-icon { color: var(--text-3); font-size: 17px; transition: color var(--dur-base); }
+#searchIsland:focus-within .search-icon { color: #fff; }
+#searchInput { flex: 1; height: 100%; background: transparent; border: none; padding: 0 14px; color: #fff; font-size: 15px; outline: none; }
+#searchInput::placeholder { color: var(--text-3); }
+.search-action-btn {
+  width: 38px; height: 38px; border-radius: 50%; border: none; background: var(--glass-bg); color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all var(--dur-base);
+  opacity: 0; pointer-events: none; transform: scale(0.8);
+}
+.search-action-btn.active { opacity: 1; pointer-events: all; transform: scale(1); }
+.island-loader { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.14); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   7. TOAST
+   ============================================================ */
+.toast {
+  position: absolute; bottom: calc(96px + var(--safe-bottom)); left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--glass-bg-strong); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border); padding: 12px 22px; border-radius: var(--radius-full);
+  color: #fff; font-size: var(--fs-base); font-weight: var(--fw-medium); z-index: 300;
+  opacity: 0; transition: all var(--dur-slow) var(--ease-spring); pointer-events: none; white-space: nowrap; box-shadow: var(--shadow-sm);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 380px) {
+  :root { --ring-size: 62px; }
+  .card-info { right: 78px; }
+}
+</style>
 </head>
 <body>
+<div class="app" id="app">
 
-    <div id="feedContainer"></div>
+  <!-- MAIN FEED (base screen) -->
+  <div id="feedContainer" aria-label="Feed"></div>
 
-    <div id="searchIsland">
-        <i class="fa-solid fa-search search-icon"></i>
-        <input type="text" id="searchInput" placeholder="Search universe descriptions..." autocomplete="off">
-        <div class="island-loader" id="searchLoader"></div>
-        <button class="search-action-btn" id="clearSearchBtn">
-            <i class="fa-solid fa-times"></i>
-        </button>
+  <!-- STORIES HEADER (overlay pinned to top of the feed) -->
+  <header class="stories-header">
+    <div class="brand-row">
+      <span class="brand-title">VibeStream</span>
+      <button class="header-icon-btn" id="adminEntryBtn" title="Admin" aria-label="Admin">
+        <i class="fa-solid fa-shield-halved" id="adminIcon"></i>
+      </button>
     </div>
+    <div class="stories-row" id="storiesRow" aria-label="Stories"></div>
+  </header>
 
-    <script>
-        /**
-         * 1. GLOBAL INFRASTRUCTURE CONFIGURATION
-         * Replace placeholder values with your specific GitHub Username, Repository Name, 
-         * Branch, and Folder Path details to map assets natively.
-         */
-        const GITHUB_CONFIG = {
-            username: "TrndBrnd-link",
-            repository: "TrndBrnd",
-            branch: "main",
-            folderPath: "assets" // Use "" if images are housed directly at the root level
-        };
+  <!-- SEARCH ISLAND -->
+  <div id="searchIsland">
+    <i class="fa-solid fa-search search-icon"></i>
+    <input type="text" id="searchInput" placeholder="Search the feed..." autocomplete="off">
+    <div class="island-loader" id="searchLoader"></div>
+    <button class="search-action-btn" id="clearSearchBtn" aria-label="Clear search">
+      <i class="fa-solid fa-times"></i>
+    </button>
+  </div>
 
-        // Computes explicit raw content base delivery path
-        const GITHUB_BASE_URL = `https://raw.githubusercontent.com/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repository}/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.folderPath ? GITHUB_CONFIG.folderPath + '/' : ''}`;
+  <!-- STORY VIEWER -->
+  <div class="story-viewer" id="storyViewer" role="dialog" aria-modal="true" aria-label="Story viewer">
+    <div class="viewer-progress-row" id="progressRow"></div>
+    <div class="viewer-header">
+      <div class="viewer-avatar"><img id="viewerAvatarImg" src="" alt=""></div>
+      <div class="viewer-username" id="viewerUsername"></div>
+      <button class="viewer-close" id="viewerCloseBtn" aria-label="Close story"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="viewer-stage" id="viewerStage">
+      <img class="viewer-media" id="viewerMedia" src="" alt="">
+      <div class="viewer-scrim"></div>
+      <div class="story-caption" id="storyCaption">
+        <span class="cap-title" id="captionTitle"></span>
+        <span id="captionDesc"></span>
+      </div>
+      <div class="hold-indicator" id="holdIndicator"><i class="fa-solid fa-pause"></i></div>
+      <div class="tap-zones">
+        <div class="zone zone-left" id="zoneLeft"></div>
+        <div class="zone zone-center" id="zoneCenter"></div>
+        <div class="zone zone-right" id="zoneRight"></div>
+      </div>
+    </div>
+    <div class="viewer-actions">
+      <button class="action-btn btn-wa" id="viewerWaBtn" title="Share via WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
+      <button class="action-btn btn-fb" id="viewerFbBtn" title="View on Facebook"><i class="fa-brands fa-facebook-f"></i></button>
+      <button class="action-btn btn-tt" id="viewerTtBtn" title="Watch on TikTok"><i class="fa-brands fa-tiktok"></i></button>
+      <span class="va-label">Double-tap to like</span>
+    </div>
+  </div>
 
-        /**
-         * 2. CENTRALIZED DATABASE SYSTEM WITH COMPREHENSIVE SCHEMAS
-         * Houses descriptive parameters along with manual routing URLs per record object.
-         */
-        class AssetDatabase {
-            static async getRecords() {
-                // Mimicking async latency common to external platform delivery layers
-                await new Promise(resolve => setTimeout(resolve, 200));
+  <!-- PROMO / CONTACT-ADMIN GATE (shown to non-admins on upload attempt) -->
+  <div class="sheet-overlay" id="promoOverlay">
+    <div class="sheet-card">
+      <button class="sheet-close" id="promoCloseBtn" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      <div class="sheet-icon wa-tone"><i class="fa-solid fa-bullhorn"></i></div>
+      <h2>Want to be featured?</h2>
+      <p class="sub">Stories are curated by our team. Send your photo or video to our admin on WhatsApp and we'll get it published for you.</p>
+      <button class="btn-primary wa-tone" id="promoWaBtn"><i class="fa-brands fa-whatsapp"></i>&nbsp; Message us on WhatsApp</button>
+      <button class="link-btn" id="promoAdminLoginLink">I'm the admin — log in</button>
+    </div>
+  </div>
 
-                return [
-                    { 
-                        id: 'img1', 
-                        file: '2.jpg', 
-                        name: 'Mountain Sunset', 
-                        desc: 'A breathtaking view of rocky mountains during golden hour. The sky transitions from deep orange to purple, casting long shadows across the valley below.',
-                        links: {
-                            whatsapp: 'https://wa.me/9647800000001?text=Inquiry%20Mountain%20Sunset',
-                            facebook: 'https://facebook.com/yourpage/posts/mountain-sunset-id',
-                            tiktok: 'https://tiktok.com/@yourprofile/video/mountain-sunset-id'
-                        }
-                    },
-                    { 
-                        id: 'img2', 
-                        file: '3.jpg', 
-                        name: 'Ocean Horizon', 
-                        desc: 'Crystal clear blue waters crashing against white sand beaches. The tropical ocean view provides a calming, serene atmosphere perfect for summer vibes.',
-                        links: {
-                            whatsapp: 'https://wa.me/9647800000002?text=Inquiry%20Ocean%20Horizon',
-                            facebook: 'https://facebook.com/yourpage/posts/ocean-horizon-id',
-                            tiktok: 'https://tiktok.com/@yourprofile/video/ocean-horizon-id'
-                        }
-                    },
-                    { 
-                        id: 'img3', 
-                        file: '4.jpg', 
-                        name: 'Cyberpunk City', 
-                        desc: 'Urban nightlife captured in a neon-lit metropolis. Towering skyscrapers, flying vehicles, and glowing street signs create a moody, futuristic atmosphere.',
-                        links: {
-                            whatsapp: 'https://wa.me/9647800000003?text=Inquiry%20Cyberpunk%20City',
-                            facebook: 'https://facebook.com/yourpage/posts/cyberpunk-city-id',
-                            tiktok: 'https://tiktok.com/@yourprofile/video/cyberpunk-city-id'
-                        }
-                    },
-                    { 
-                        id: 'img4', 
-                        file: '5.jpg', 
-                        name: 'Emerald Forest', 
-                        desc: 'Deep within an ancient woodland, sunlight pierces through the thick canopy of green leaves. Mist hovers cleanly above the damp, mossy ground.',
-                        links: {
-                            whatsapp: 'https://wa.me/9647800000004?text=Inquiry%20Emerald%20Forest',
-                            facebook: 'https://facebook.com/yourpage/posts/emerald-forest-id',
-                            tiktok: 'https://tiktok.com/@yourprofile/video/emerald-forest-id'
-                        }
-                    },
-                    { 
-                        id: 'img5', 
-                        file: '6.jpg', 
-                        name: 'Sahara Dunes', 
-                        desc: 'Endless rolling sand dunes under a blazing sun. The warm, arid landscape features sharp ridges sculpted by shifting desert winds.',
-                        links: {
-                            whatsapp: 'https://wa.me/9647800000005?text=Inquiry%20Sahara%20Dunes',
-                            facebook: 'https://facebook.com/yourpage/posts/sahara-dunes-id',
-                            tiktok: 'https://tiktok.com/@yourprofile/video/sahara-dunes-id'
-                        }
-                    },
-                    { 
-                        id: 'img6', 
-                        file: '7.jpg', 
-                        name: 'Arctic Peak', 
-                        desc: 'A frozen tundra featuring massive glaciers and snow-capped mountains. The cold, crisp air and blue ice create a beautiful winter wonderland.',
-                        links: {
-                            whatsapp: 'https://wa.me/9647800000006?text=Inquiry%20Arctic%20Peak',
-                            facebook: 'https://facebook.com/yourpage/posts/arctic-peak-id',
-                            tiktok: 'https://tiktok.com/@yourprofile/video/arctic-peak-id'
-                        }
-                    }
-                ];
-            }
-        }
+  <!-- ADMIN LOGIN -->
+  <div class="sheet-overlay" id="adminLoginOverlay">
+    <div class="sheet-card">
+      <button class="sheet-close" id="adminLoginCloseBtn" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      <div class="sheet-icon"><i class="fa-solid fa-lock"></i></div>
+      <h2 id="adminLoginTitle">Admin Login</h2>
+      <p class="sub" id="adminLoginSub">Sign in to upload and manage stories.</p>
+      <form id="adminLoginForm" style="width:100%; display:flex; flex-direction:column; gap:12px;">
+        <div class="field">
+          <label for="adminUsername">Username</label>
+          <input type="text" id="adminUsername" autocomplete="username" placeholder="admin">
+        </div>
+        <div class="field" id="adminPasswordField">
+          <label for="adminPassword">Password</label>
+          <div class="input-wrap">
+            <input type="password" id="adminPassword" autocomplete="current-password" placeholder="••••••••">
+            <button type="button" class="peek-btn" id="togglePasswordBtn" aria-label="Show password"><i class="fa-solid fa-eye"></i></button>
+          </div>
+          <div class="field-error-msg" id="adminLoginError"></div>
+        </div>
+        <button type="submit" class="btn-primary">Log in</button>
+      </form>
+      <button class="link-btn" id="adminLogoutBtn" style="display:none;">Log out of admin</button>
+    </div>
+  </div>
 
-        /**
-         * 3. APPLICATION ENGINE STATE ENGINE
-         */
-        let MasterDatabase = [];
-        let RuntimePool = [];
-        let IsSearching = false;
+  <!-- UPLOAD FLOW (admin only) -->
+  <div class="sheet-overlay" id="uploadOverlay">
+    <div class="sheet-card" id="uploadCard">
+      <button class="sheet-close" id="closeUploadBtn" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
 
-        const feedContainer = document.getElementById('feedContainer');
-        const searchInput = document.getElementById('searchInput');
-        const clearSearchBtn = document.getElementById('clearSearchBtn');
-        const searchLoader = document.getElementById('searchLoader');
+      <div class="upload-panel visible" id="panelInitial" style="display:flex; flex-direction:column; align-items:center; gap:16px;">
+        <div class="sheet-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+        <h2>Publish a story</h2>
+        <p class="sub">Choose a photo to add to the stories row and feed.</p>
+        <button class="btn-primary" id="selectFileBtn"><i class="fa-solid fa-image"></i>&nbsp; Choose photo</button>
+        <div class="upload-drop-hint">or drag &amp; drop a photo here</div>
+        <input type="file" id="fileInput" accept="image/*">
+        <div class="admin-badge-row"><i class="fa-solid fa-shield-halved"></i> Signed in as admin</div>
+      </div>
 
-        /**
-         * Fisher-Yates Randomization Algorithm Utility
-         */
-        function randomizeArray(array) {
-            const copy = [...array];
-            for (let i = copy.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [copy[i], copy[j]] = [copy[j], copy[i]];
-            }
-            return copy;
-        }
+      <div class="upload-panel" id="panelPreview" style="display:none; flex-direction:column; align-items:center; gap:14px;">
+        <div class="preview-frame"><img id="previewImg" src="" alt="Preview"></div>
+        <div class="filter-row" id="filterRow"></div>
+        <div class="field">
+          <label for="titleInput">Title</label>
+          <input type="text" id="titleInput" placeholder="Give it a name" maxlength="40">
+        </div>
+        <div class="field">
+          <label for="descInput">Description</label>
+          <textarea id="descInput" placeholder="A line about this moment..." maxlength="160"></textarea>
+        </div>
+        <div class="step-actions">
+          <button class="btn-secondary" id="backBtn">Back</button>
+          <button class="btn-primary" id="shareBtn">Publish</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        /**
-         * Core Bootstrap Initialization
-         */
-        async function bootstrap() {
-            MasterDatabase = await AssetDatabase.getRecords();
-            // Enforce default baseline randomization on initial loading state
-            RuntimePool = randomizeArray(MasterDatabase);
-            renderFeed(RuntimePool);
-            setupScrollObserver();
-        }
+  <div class="toast" id="toast"></div>
+</div>
+<script>
+/* ============================================================
+   CONFIG
+   Replace these with real values before shipping.
+   ============================================================ */
+const GITHUB_CONFIG = {
+  username: "TrndBrnd-link",
+  repository: "TrndBrnd",
+  branch: "main",
+  folderPath: "assets"
+};
+const GITHUB_BASE_URL = `https://raw.githubusercontent.com/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repository}/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.folderPath ? GITHUB_CONFIG.folderPath + '/' : ''}`;
 
-        /**
-         * 4. RENDER LAYOUT MANAGEMENT
-         */
-        function renderFeed(items, appendMode = false) {
-            if (!appendMode) feedContainer.innerHTML = '';
-            
-            if (items.length === 0) {
-                feedContainer.innerHTML = `
-                    <div class="card" style="flex-direction: column; gap: 10px;">
-                        <i class="fa-solid fa-cloud-bounce" style="font-size: 2.5rem; color: rgba(255,255,255,0.15);"></i>
-                        <p style="color: rgba(255,255,255,0.4); font-size: 0.95rem;">No platform transmissions matched your request.</p>
-                    </div>`;
-                return;
-            }
+const ADMIN_CONFIG = {
+  username: "admin",
+  password: "changeme123",       // TODO: replace before going live
+  whatsappNumber: "9647800000000" // admin's WhatsApp number, digits only, country code first
+};
 
-            items.forEach((item) => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                
-                // Absolute structural pathing computed straight from CDN settings
-                const resolvedMediaUrl = GITHUB_BASE_URL + item.file;
-                
-                card.innerHTML = `
-                    <img class="media" src="${resolvedMediaUrl}" alt="${item.name}" onerror="this.onerror=null; handleImageFallback(this, '${item.name}');">
-                    <div class="card-info">
-                        <h3>${item.name}</h3>
-                        <p>${item.desc}</p>
-                    </div>
-                    <div class="actions">
-                        <button class="action-btn btn-wa" onclick="executeExternalRedirect('${item.links.whatsapp}')" title="Share via WhatsApp">
-                            <i class="fa-brands fa-whatsapp"></i>
-                        </button>
-                        <button class="action-btn btn-fb" onclick="executeExternalRedirect('${item.links.facebook}')" title="View on Facebook">
-                            <i class="fa-brands fa-facebook-f"></i>
-                        </button>
-                        <button class="action-btn btn-tt" onclick="executeExternalRedirect('${item.links.tiktok}')" title="Watch on TikTok">
-                            <i class="fa-brands fa-tiktok"></i>
-                        </button>
-                    </div>
-                `;
-                feedContainer.appendChild(card);
-            });
+const FILTERS = [
+  { id: 'normal', label: 'Normal', css: 'none' },
+  { id: 'vivid',  label: 'Vivid',  css: 'saturate(1.45) contrast(1.08)' },
+  { id: 'mono',   label: 'Mono',   css: 'grayscale(1) contrast(1.05)' },
+  { id: 'warm',   label: 'Warm',   css: 'sepia(0.35) saturate(1.25)' },
+  { id: 'cool',   label: 'Cool',   css: 'hue-rotate(-8deg) saturate(1.15) brightness(1.04)' },
+  { id: 'fade',   label: 'Fade',   css: 'contrast(0.86) brightness(1.08) saturate(0.82)' }
+];
 
-            const trigger = document.createElement('div');
-            trigger.className = 'scroll-trigger';
-            feedContainer.appendChild(trigger);
-        }
+/* ============================================================
+   SEED DATA  (single backend behind both the feed and stories)
+   ============================================================ */
+class ContentDatabase {
+  static async getRecords() {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    return [
+      { id: 'img1', file: '2.jpg', name: 'Mountain Sunset', desc: 'A breathtaking view of rocky mountains during golden hour. The sky transitions from deep orange to purple, casting long shadows across the valley below.',
+        link: 'https://example.com/stories/mountain-sunset',
+        links: { whatsapp: 'https://wa.me/9647800000001?text=Inquiry%20Mountain%20Sunset', facebook: 'https://facebook.com/yourpage/posts/mountain-sunset-id', tiktok: 'https://tiktok.com/@yourprofile/video/mountain-sunset-id' } },
+      { id: 'img2', file: '3.jpg', name: 'Ocean Horizon', desc: 'Crystal clear blue waters crashing against white sand beaches. The tropical ocean view provides a calming, serene atmosphere perfect for summer vibes.',
+        link: 'https://example.com/stories/ocean-horizon',
+        links: { whatsapp: 'https://wa.me/9647800000002?text=Inquiry%20Ocean%20Horizon', facebook: 'https://facebook.com/yourpage/posts/ocean-horizon-id', tiktok: 'https://tiktok.com/@yourprofile/video/ocean-horizon-id' } },
+      { id: 'img3', file: '4.jpg', name: 'Cyberpunk City', desc: 'Urban nightlife captured in a neon-lit metropolis. Towering skyscrapers, flying vehicles, and glowing street signs create a moody, futuristic atmosphere.',
+        link: 'https://example.com/stories/cyberpunk-city',
+        links: { whatsapp: 'https://wa.me/9647800000003?text=Inquiry%20Cyberpunk%20City', facebook: 'https://facebook.com/yourpage/posts/cyberpunk-city-id', tiktok: 'https://tiktok.com/@yourprofile/video/cyberpunk-city-id' } },
+      { id: 'img4', file: '5.jpg', name: 'Emerald Forest', desc: 'Deep within an ancient woodland, sunlight pierces through the thick canopy of green leaves. Mist hovers cleanly above the damp, mossy ground.',
+        link: 'https://example.com/stories/emerald-forest',
+        links: { whatsapp: 'https://wa.me/9647800000004?text=Inquiry%20Emerald%20Forest', facebook: 'https://facebook.com/yourpage/posts/emerald-forest-id', tiktok: 'https://tiktok.com/@yourprofile/video/emerald-forest-id' } },
+      { id: 'img5', file: '6.jpg', name: 'Sahara Dunes', desc: 'Endless rolling sand dunes under a blazing sun. The warm, arid landscape features sharp ridges sculpted by shifting desert winds.',
+        link: 'https://example.com/stories/sahara-dunes',
+        links: { whatsapp: 'https://wa.me/9647800000005?text=Inquiry%20Sahara%20Dunes', facebook: 'https://facebook.com/yourpage/posts/sahara-dunes-id', tiktok: 'https://tiktok.com/@yourprofile/video/sahara-dunes-id' } },
+      { id: 'img6', file: '7.jpg', name: 'Arctic Peak', desc: 'A frozen tundra featuring massive glaciers and snow-capped mountains. The cold, crisp air and blue ice create a beautiful winter wonderland.',
+        link: 'https://example.com/stories/arctic-peak',
+        links: { whatsapp: 'https://wa.me/9647800000006?text=Inquiry%20Arctic%20Peak', facebook: 'https://facebook.com/yourpage/posts/arctic-peak-id', tiktok: 'https://tiktok.com/@yourprofile/video/arctic-peak-id' } }
+    ].map((r) => ({ ...r, dataUrl: null, filter: 'normal', _seen: false }));
+  }
+}
 
-        /**
-         * Graceful Fallback Management if GitHub configuration variables are left unassigned
-         */
-        function handleImageFallback(imgElement, label) {
-            imgElement.src = `https://placehold.co/1080x1920/18181b/ffffff?text=${encodeURIComponent(label)}`;
-        }
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+function randomizeArray(array) {
+  const copy = [...array];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+function getInitials(name) {
+  return (name || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+}
+function userGradient(seed) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+  const h1 = Math.abs(hash) % 360;
+  const h2 = (h1 + 55) % 360;
+  return `linear-gradient(135deg, hsl(${h1},70%,52%), hsl(${h2},70%,45%))`;
+}
+function resolveMediaUrl(record) {
+  return record.dataUrl || (GITHUB_BASE_URL + record.file);
+}
+function resolveFilterCss(record) {
+  const f = FILTERS.find((x) => x.id === record.filter);
+  return f ? f.css : 'none';
+}
+function handleImageFallback(imgEl, label) {
+  imgEl.onerror = null;
+  imgEl.src = `https://placehold.co/1080x1920/18181b/ffffff?text=${encodeURIComponent(label)}`;
+}
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+function buildWaLink(number, text) {
+  return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
+}
+function openExternal(url) {
+  if (url && url !== '#' && !url.includes('YOUR_')) {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  } else {
+    showToast("That link isn't set up yet");
+  }
+}
 
-        function executeExternalRedirect(targetUrl) {
-            if (targetUrl && targetUrl !== '#' && !targetUrl.includes('YOUR_')) {
-                window.open(targetUrl, '_blank', 'noopener,noreferrer');
-            } else {
-                alert("Destination target URL configuration parameters require assignment within the internal database schema.");
-            }
-        }
+/* ============================================================
+   STATE
+   ============================================================ */
+let MasterDatabase = [];   // every record — backs both the feed and the stories row
+let FeedPool = [];         // shuffled working copy for the main feed
+let isAdmin = false;
+let pendingUploadDataUrl = null;
+let selectedFilterId = 'normal';
 
-        /**
-         * Infinite Continuous Cycling Engine Logic
-         */
-        function setupScrollObserver() {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.remove();
-                        appendContinuousLoop();
-                    }
-                });
-            }, { root: feedContainer, threshold: 0.1 });
+/* -- story viewer state -- */
+let storyOrder = [];       // indices into MasterDatabase, in viewing order
+let currentStoryPos = -1;
+let isViewerOpen = false;
+let isHeld = false;
+let holdStartAt = 0;
+let elapsedBeforeHold = 0;
+let storyStartedAt = 0;
+let progressRAF = null;
+let lastTapTime = 0;
+let lastPointerPos = { x: 0, y: 0 };
+const STORY_DURATION = 5000;
 
-            const rebindTrigger = () => {
-                const trigger = document.querySelector('.scroll-trigger');
-                if (trigger) observer.observe(trigger);
-            };
+/* ============================================================
+   DOM REFS
+   ============================================================ */
+const feedContainer = document.getElementById('feedContainer');
+const storiesRow = document.getElementById('storiesRow');
+const searchInput = document.getElementById('searchInput');
+const clearSearchBtn = document.getElementById('clearSearchBtn');
+const searchLoader = document.getElementById('searchLoader');
+const toastEl = document.getElementById('toast');
 
-            const structuralMutation = new MutationObserver(rebindTrigger);
-            structuralMutation.observe(feedContainer, { childList: true });
-            rebindTrigger();
-        }
+const storyViewer = document.getElementById('storyViewer');
+const progressRow = document.getElementById('progressRow');
+const viewerAvatarImg = document.getElementById('viewerAvatarImg');
+const viewerUsername = document.getElementById('viewerUsername');
+const viewerCloseBtn = document.getElementById('viewerCloseBtn');
+const viewerStage = document.getElementById('viewerStage');
+const viewerMedia = document.getElementById('viewerMedia');
+const storyCaption = document.getElementById('storyCaption');
+const captionTitle = document.getElementById('captionTitle');
+const captionDesc = document.getElementById('captionDesc');
+const holdIndicator = document.getElementById('holdIndicator');
+const zoneLeft = document.getElementById('zoneLeft');
+const zoneCenter = document.getElementById('zoneCenter');
+const zoneRight = document.getElementById('zoneRight');
+const viewerWaBtn = document.getElementById('viewerWaBtn');
+const viewerFbBtn = document.getElementById('viewerFbBtn');
+const viewerTtBtn = document.getElementById('viewerTtBtn');
 
-        function appendContinuousLoop() {
-            // Continually serve records randomly shuffled on iterative loop extensions
-            const dynamicCycleSegment = randomizeArray(MasterDatabase).slice(0, 3);
-            renderFeed(dynamicCycleSegment, true);
-        }
+const adminEntryBtn = document.getElementById('adminEntryBtn');
+const adminIcon = document.getElementById('adminIcon');
 
-        /**
-         * 5. HIGH-WEIGHT TOKENIZED SEARCH ALGORITHM
-         */
-        let operationalSearchDebounce;
-        searchInput.addEventListener('input', (e) => {
-            const queryText = e.target.value.trim();
-            
-            clearSearchBtn.classList.toggle('active', queryText.length > 0);
-            if(queryText.length === 0) searchLoader.style.display = 'none';
+const promoOverlay = document.getElementById('promoOverlay');
+const promoCloseBtn = document.getElementById('promoCloseBtn');
+const promoWaBtn = document.getElementById('promoWaBtn');
+const promoAdminLoginLink = document.getElementById('promoAdminLoginLink');
 
-            clearTimeout(operationalSearchDebounce);
-            operationalSearchDebounce = setTimeout(() => {
-                processStructuralSearch(queryText);
-            }, 350); 
-        });
+const adminLoginOverlay = document.getElementById('adminLoginOverlay');
+const adminLoginCloseBtn = document.getElementById('adminLoginCloseBtn');
+const adminLoginForm = document.getElementById('adminLoginForm');
+const adminUsernameInput = document.getElementById('adminUsername');
+const adminPasswordInput = document.getElementById('adminPassword');
+const adminPasswordField = document.getElementById('adminPasswordField');
+const adminLoginError = document.getElementById('adminLoginError');
+const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+const adminLoginTitle = document.getElementById('adminLoginTitle');
+const adminLoginSub = document.getElementById('adminLoginSub');
+const adminLogoutBtn = document.getElementById('adminLogoutBtn');
 
-        clearSearchBtn.addEventListener('click', () => {
-            searchInput.value = '';
-            clearSearchBtn.classList.remove('active');
-            processStructuralSearch('');
-            searchInput.focus();
-        });
+const uploadOverlay = document.getElementById('uploadOverlay');
+const closeUploadBtn = document.getElementById('closeUploadBtn');
+const panelInitial = document.getElementById('panelInitial');
+const panelPreview = document.getElementById('panelPreview');
+const selectFileBtn = document.getElementById('selectFileBtn');
+const fileInput = document.getElementById('fileInput');
+const previewImg = document.getElementById('previewImg');
+const filterRow = document.getElementById('filterRow');
+const titleInput = document.getElementById('titleInput');
+const descInput = document.getElementById('descInput');
+const backBtn = document.getElementById('backBtn');
+const shareBtn = document.getElementById('shareBtn');
+const uploadCard = document.getElementById('uploadCard');
 
-        async function processStructuralSearch(queryText) {
-            IsSearching = queryText.length > 0;
-            
-            if (!IsSearching) {
-                renderFeed(RuntimePool);
-                return;
-            }
+/* ============================================================
+   BOOTSTRAP
+   ============================================================ */
+async function bootstrap() {
+  MasterDatabase = await ContentDatabase.getRecords();
+  FeedPool = randomizeArray(MasterDatabase);
+  renderFeed(FeedPool);
+  renderStoriesRow();
+  setupScrollObserver();
+  bindEvents();
+}
 
-            searchLoader.style.display = 'block';
-            clearSearchBtn.style.display = 'none';
+/* ============================================================
+   FEED RENDERING
+   ============================================================ */
+function renderFeed(items, appendMode = false) {
+  if (!appendMode) feedContainer.innerHTML = '';
 
-            await new Promise(resolve => setTimeout(resolve, 250));
+  if (items.length === 0) {
+    const card = el('div', 'card empty-state');
+    card.style.flexDirection = 'column';
+    card.style.gap = '10px';
+    const icon = document.createElement('i');
+    icon.className = 'fa-solid fa-cloud-bolt';
+    const msg = el('p', null, 'Nothing matched your search.');
+    card.append(icon, msg);
+    feedContainer.appendChild(card);
+    return;
+  }
 
-            const cleanQuery = queryText.toLowerCase();
-            const tokenizedWords = cleanQuery.split(/\s+/).filter(word => word.length > 1);
+  items.forEach((item) => {
+    feedContainer.appendChild(buildFeedCard(item));
+  });
 
-            const searchMatches = MasterDatabase.map(record => {
-                let positionalScore = 0;
-                const nameStr = record.name.toLowerCase();
-                const descStr = record.desc.toLowerCase();
+  const trigger = el('div', 'scroll-trigger');
+  feedContainer.appendChild(trigger);
+}
 
-                // Priority Layer 1: Strict Equality Matches
-                if (nameStr === cleanQuery) positionalScore += 200;
-                if (descStr.includes(cleanQuery)) positionalScore += 80;
+function buildFeedCard(item) {
+  const card = el('div', 'card');
 
-                // Priority Layer 2: Phrase Index Tokenization Checks
-                if (nameStr.includes(cleanQuery)) positionalScore += 60;
+  const img = document.createElement('img');
+  img.className = 'media';
+  img.alt = item.name;
+  img.style.filter = resolveFilterCss(item);
+  img.src = resolveMediaUrl(item);
+  img.addEventListener('error', () => handleImageFallback(img, item.name), { once: true });
+  card.appendChild(img);
 
-                // Priority Layer 3: Text Token Relevance Scans
-                tokenizedWords.forEach(token => {
-                    if (nameStr.includes(token)) positionalScore += 25;
-                    if (descStr.includes(token)) positionalScore += 10;
-                });
+  const playBadge = el('div', 'play-badge');
+  const playIcon = document.createElement('i');
+  playIcon.className = 'fa-solid fa-play';
+  playBadge.appendChild(playIcon);
+  card.appendChild(playBadge);
+  bindDoubleTapToOpen(img, playBadge, item);
 
-                return { ...record, searchRelevanceScore: positionalScore };
-            })
-            .filter(record => record.searchRelevanceScore > 0)
-            .sort((alpha, beta) => beta.searchRelevanceScore - alpha.searchRelevanceScore);
+  card.appendChild(el('div', 'card-scrim'));
 
-            renderFeed(searchMatches);
-            
-            searchLoader.style.display = 'none';
-            clearSearchBtn.style.display = 'flex';
-        }
+  const info = el('div', 'card-info');
+  info.appendChild(el('h3', null, item.name));
+  info.appendChild(el('p', null, item.desc));
+  card.appendChild(info);
 
-        window.onload = bootstrap;
-    </script>
+  const actions = el('div', 'actions');
+  actions.appendChild(buildActionBtn('btn-wa', 'fa-brands fa-whatsapp', 'Share via WhatsApp', item.links.whatsapp));
+  actions.appendChild(buildActionBtn('btn-fb', 'fa-brands fa-facebook-f', 'View on Facebook', item.links.facebook));
+  actions.appendChild(buildActionBtn('btn-tt', 'fa-brands fa-tiktok', 'Watch on TikTok', item.links.tiktok));
+  card.appendChild(actions);
+
+  return card;
+}
+
+function buildActionBtn(cls, iconCls, title, url) {
+  const btn = el('button', `action-btn ${cls}`);
+  btn.title = title;
+  const icon = document.createElement('i');
+  icon.className = iconCls;
+  btn.appendChild(icon);
+  btn.addEventListener('click', () => openExternal(url));
+  return btn;
+}
+
+/* ============================================================
+   DOUBLE-TAP-TO-OPEN  (feed image → each item's own link)
+   ============================================================ */
+function bindDoubleTapToOpen(img, playBadge, item) {
+  let lastTapTime = 0;
+  let downX = 0, downY = 0;
+
+  img.addEventListener('pointerdown', (e) => {
+    downX = e.clientX;
+    downY = e.clientY;
+  });
+
+  img.addEventListener('pointerup', (e) => {
+    const movedX = Math.abs(e.clientX - downX);
+    const movedY = Math.abs(e.clientY - downY);
+    if (movedX > 10 || movedY > 10) return; // was a scroll/drag, not a tap
+
+    const now = Date.now();
+    if (now - lastTapTime < 300) {
+      lastTapTime = 0;
+      handleImageDoubleTap(img, playBadge, item, e.clientX, e.clientY);
+    } else {
+      lastTapTime = now;
+    }
+  });
+}
+
+function handleImageDoubleTap(img, playBadge, item, clientX, clientY) {
+  playBadge.classList.remove('pulse');
+  void playBadge.offsetWidth; // restart animation on rapid re-taps
+  playBadge.classList.add('pulse');
+  playBadge.addEventListener('animationend', () => playBadge.classList.remove('pulse'), { once: true });
+
+  spawnTapRipple(img, clientX, clientY);
+  openExternal(item.link);
+}
+
+function spawnTapRipple(img, clientX, clientY) {
+  const card = img.closest('.card');
+  if (!card) return;
+  const rect = card.getBoundingClientRect();
+  const cx = (clientX !== undefined ? clientX : rect.left + rect.width / 2) - rect.left;
+  const cy = (clientY !== undefined ? clientY : rect.top + rect.height / 2) - rect.top;
+  const heart = el('div', 'heart-burst');
+  heart.style.left = (cx - 28) + 'px';
+  heart.style.top = (cy - 28) + 'px';
+  const icon = document.createElement('i');
+  icon.className = 'fa-solid fa-arrow-up-right-from-square';
+  icon.style.fontSize = '38px';
+  heart.appendChild(icon);
+  card.appendChild(heart);
+  heart.addEventListener('animationend', () => heart.remove(), { once: true });
+}
+
+/* ============================================================
+   INFINITE LOOP (feed)
+   ============================================================ */
+function setupScrollObserver() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.remove();
+        appendContinuousLoop();
+      }
+    });
+  }, { root: feedContainer, threshold: 0.1 });
+
+  const rebindTrigger = () => {
+    const trigger = document.querySelector('.scroll-trigger');
+    if (trigger) observer.observe(trigger);
+  };
+
+  const structuralMutation = new MutationObserver(rebindTrigger);
+  structuralMutation.observe(feedContainer, { childList: true });
+  rebindTrigger();
+}
+
+function appendContinuousLoop() {
+  if (MasterDatabase.length === 0) return;
+  const segment = randomizeArray(MasterDatabase).slice(0, 3);
+  renderFeed(segment, true);
+}
+
+/* ============================================================
+   SEARCH  (filters the feed only — the stories row always shows everyone)
+   ============================================================ */
+let searchDebounce;
+function bindSearchEvents() {
+  searchInput.addEventListener('input', (e) => {
+    const q = e.target.value.trim();
+    clearSearchBtn.classList.toggle('active', q.length > 0);
+    if (q.length === 0) searchLoader.style.display = 'none';
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => runSearch(q), 350);
+  });
+  clearSearchBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    clearSearchBtn.classList.remove('active');
+    runSearch('');
+    searchInput.focus();
+  });
+}
+
+async function runSearch(queryText) {
+  if (!queryText) { renderFeed(FeedPool); return; }
+
+  searchLoader.style.display = 'block';
+  clearSearchBtn.style.display = 'none';
+  await new Promise((r) => setTimeout(r, 220));
+
+  const q = queryText.toLowerCase();
+  const tokens = q.split(/\s+/).filter((t) => t.length > 1);
+
+  const matches = MasterDatabase.map((record) => {
+    let score = 0;
+    const nameStr = record.name.toLowerCase();
+    const descStr = record.desc.toLowerCase();
+    if (nameStr === q) score += 200;
+    if (descStr.includes(q)) score += 80;
+    if (nameStr.includes(q)) score += 60;
+    tokens.forEach((t) => { if (nameStr.includes(t)) score += 25; if (descStr.includes(t)) score += 10; });
+    return { ...record, _score: score };
+  }).filter((r) => r._score > 0).sort((a, b) => b._score - a._score);
+
+  renderFeed(matches);
+  searchLoader.style.display = 'none';
+  clearSearchBtn.style.display = 'flex';
+}
+
+/* ============================================================
+   STORIES ROW
+   ============================================================ */
+function renderStoriesRow() {
+  storiesRow.innerHTML = '';
+  storiesRow.appendChild(buildAddStoryRing());
+  MasterDatabase.forEach((record, idx) => storiesRow.appendChild(buildStoryRing(record, idx)));
+}
+
+function buildAddStoryRing() {
+  const wrap = el('button', 'story-avatar-wrap add-story');
+  wrap.type = 'button';
+  wrap.setAttribute('aria-label', 'Add a story');
+  const ring = el('div', 'story-ring');
+  const icon = el('div', 'add-icon');
+  const i = document.createElement('i');
+  i.className = 'fa-solid fa-plus';
+  icon.appendChild(i);
+  ring.appendChild(icon);
+  wrap.appendChild(ring);
+  wrap.appendChild(el('span', 'username', 'Your Story'));
+  wrap.addEventListener('click', handleAddStoryClick);
+  return wrap;
+}
+
+function buildStoryRing(record, idx) {
+  const wrap = el('button', 'story-avatar-wrap');
+  wrap.type = 'button';
+  wrap.setAttribute('aria-label', `View ${record.name}'s story`);
+  const ring = el('div', 'story-ring' + (record._seen ? '' : ' has-unseen'));
+  const bg = el('div', 'ring-bg');
+  const img = document.createElement('img');
+  img.alt = record.name;
+  img.src = resolveMediaUrl(record);
+  img.style.filter = resolveFilterCss(record);
+  img.addEventListener('error', () => handleImageFallback(img, record.name), { once: true });
+  bg.appendChild(img);
+  ring.appendChild(bg);
+  wrap.appendChild(ring);
+  wrap.appendChild(el('span', 'username', record.name));
+  wrap.addEventListener('click', () => openViewer(idx));
+  return wrap;
+}
+
+function markRingSeen(dbIdx) {
+  const wrap = storiesRow.children[dbIdx + 1]; // +1: slot 0 is the add-story ring
+  const ring = wrap && wrap.querySelector('.story-ring');
+  if (ring) ring.classList.remove('has-unseen');
+}
+
+/* ============================================================
+   STORY VIEWER
+   ============================================================ */
+function openViewer(startIdx) {
+  if (MasterDatabase.length === 0) return;
+  const all = MasterDatabase.map((_, i) => i);
+  storyOrder = all.slice(startIdx).concat(all.slice(0, startIdx));
+  isViewerOpen = true;
+  storyViewer.classList.add('open');
+  buildProgressSegments();
+  showStoryAtPos(0);
+}
+
+function buildProgressSegments() {
+  progressRow.innerHTML = '';
+  storyOrder.forEach(() => {
+    const track = el('div', 'progress-track');
+    track.appendChild(el('div', 'progress-fill'));
+    progressRow.appendChild(track);
+  });
+}
+
+function showStoryAtPos(pos) {
+  cancelAnimationFrame(progressRAF);
+  currentStoryPos = pos;
+  const dbIdx = storyOrder[pos];
+  const record = MasterDatabase[dbIdx];
+
+  const tracks = progressRow.querySelectorAll('.progress-track');
+  tracks.forEach((t, i) => {
+    t.classList.toggle('complete', i < pos);
+    const fill = t.querySelector('.progress-fill');
+    if (i >= pos) fill.style.width = '0%';
+  });
+
+  const mediaUrl = resolveMediaUrl(record);
+  viewerMedia.onerror = () => handleImageFallback(viewerMedia, record.name);
+  viewerMedia.src = mediaUrl;
+  viewerMedia.style.filter = resolveFilterCss(record);
+  viewerAvatarImg.onerror = () => handleImageFallback(viewerAvatarImg, record.name);
+  viewerAvatarImg.src = mediaUrl;
+  viewerUsername.textContent = record.name;
+  captionTitle.textContent = record.name;
+  captionDesc.textContent = record.desc;
+  storyCaption.classList.remove('show');
+  requestAnimationFrame(() => storyCaption.classList.add('show'));
+
+  viewerWaBtn.onclick = () => openExternal(record.links.whatsapp);
+  viewerFbBtn.onclick = () => openExternal(record.links.facebook);
+  viewerTtBtn.onclick = () => openExternal(record.links.tiktok);
+
+  if (!record._seen) {
+    record._seen = true;
+    markRingSeen(dbIdx);
+  }
+
+  elapsedBeforeHold = 0;
+  storyStartedAt = performance.now();
+  isHeld = false;
+  runProgressLoop();
+}
+
+function runProgressLoop() {
+  const tick = (now) => {
+    if (!isViewerOpen) return;
+    if (isHeld) { progressRAF = requestAnimationFrame(tick); return; }
+    const elapsed = elapsedBeforeHold + (now - storyStartedAt);
+    const pct = Math.min(100, (elapsed / STORY_DURATION) * 100);
+    const fill = progressRow.children[currentStoryPos] && progressRow.children[currentStoryPos].querySelector('.progress-fill');
+    if (fill) fill.style.width = pct + '%';
+    if (elapsed >= STORY_DURATION) { goToNextStory(); return; }
+    progressRAF = requestAnimationFrame(tick);
+  };
+  progressRAF = requestAnimationFrame(tick);
+}
+
+function goToNextStory() {
+  if (currentStoryPos < storyOrder.length - 1) showStoryAtPos(currentStoryPos + 1);
+  else closeViewer();
+}
+function goToPrevStory() {
+  showStoryAtPos(currentStoryPos > 0 ? currentStoryPos - 1 : 0);
+}
+function closeViewer() {
+  cancelAnimationFrame(progressRAF);
+  isViewerOpen = false;
+  storyViewer.classList.remove('open');
+  storyViewer.style.transform = '';
+  storyViewer.style.opacity = '';
+}
+
+function startHold() {
+  if (!isViewerOpen || isHeld) return;
+  isHeld = true;
+  elapsedBeforeHold += performance.now() - storyStartedAt;
+  storyViewer.classList.add('holding');
+}
+function endHold() {
+  if (!isHeld) return;
+  isHeld = false;
+  storyStartedAt = performance.now();
+  storyViewer.classList.remove('holding');
+}
+function handleZonePointerUp(zone) {
+  endHold();
+  if (zone === 'left') goToPrevStory();
+  else if (zone === 'right') goToNextStory();
+  else handleCenterTap();
+}
+function handleCenterTap() {
+  const now = Date.now();
+  if (now - lastTapTime < 300) triggerHeartBurst(lastPointerPos.x, lastPointerPos.y);
+  lastTapTime = now;
+}
+function triggerHeartBurst(clientX, clientY) {
+  const rect = viewerStage.getBoundingClientRect();
+  const cx = (clientX !== undefined ? clientX : rect.left + rect.width / 2) - rect.left;
+  const cy = (clientY !== undefined ? clientY : rect.top + rect.height / 2) - rect.top;
+  const heart = el('div', 'heart-burst');
+  heart.style.left = (cx - 28) + 'px';
+  heart.style.top = (cy - 28) + 'px';
+  const icon = document.createElement('i');
+  icon.className = 'fa-solid fa-heart';
+  heart.appendChild(icon);
+  viewerStage.appendChild(heart);
+  heart.addEventListener('animationend', () => heart.remove(), { once: true });
+  showToast('❤️ Liked', 1000);
+}
+
+/* ============================================================
+   ADMIN AUTH  (in-memory only — resets on reload, by design)
+   ============================================================ */
+function setAdminUI() {
+  adminEntryBtn.classList.toggle('is-admin', isAdmin);
+  adminEntryBtn.title = isAdmin ? 'Admin (signed in)' : 'Admin';
+  adminLoginForm.style.display = isAdmin ? 'none' : 'flex';
+  adminLogoutBtn.style.display = isAdmin ? 'block' : 'none';
+  adminLoginTitle.textContent = isAdmin ? 'Admin Mode' : 'Admin Login';
+  adminLoginSub.textContent = isAdmin ? "You're signed in as admin." : 'Sign in to upload and manage stories.';
+}
+function openAdminLogin() {
+  adminLoginError.textContent = '';
+  adminUsernameInput.value = '';
+  adminPasswordInput.value = '';
+  setAdminUI();
+  adminLoginOverlay.classList.add('active');
+}
+function closeAdminLogin() { adminLoginOverlay.classList.remove('active'); }
+function handleAdminLoginSubmit(e) {
+  e.preventDefault();
+  const u = adminUsernameInput.value.trim();
+  const p = adminPasswordInput.value;
+  if (u === ADMIN_CONFIG.username && p === ADMIN_CONFIG.password) {
+    isAdmin = true;
+    setAdminUI();
+    closeAdminLogin();
+    showToast('Welcome back, admin ✨');
+  } else {
+    adminLoginError.textContent = 'Incorrect username or password.';
+    adminPasswordField.classList.add('error');
+    setTimeout(() => adminPasswordField.classList.remove('error'), 1500);
+  }
+}
+function handleAdminLogout() {
+  isAdmin = false;
+  setAdminUI();
+  closeAdminLogin();
+  showToast('Logged out of admin');
+}
+
+/* ============================================================
+   UPLOAD GATE  (admin → real uploader · everyone else → promo)
+   ============================================================ */
+function handleAddStoryClick() {
+  if (isAdmin) openUploadOverlay();
+  else openPromoOverlay();
+}
+function openPromoOverlay() { promoOverlay.classList.add('active'); }
+function closePromoOverlay() { promoOverlay.classList.remove('active'); }
+
+/* ============================================================
+   UPLOAD FLOW  (admin only)
+   ============================================================ */
+function openUploadOverlay() {
+  showUploadPanel('initial');
+  uploadOverlay.classList.add('active');
+}
+function closeUploadOverlay() {
+  uploadOverlay.classList.remove('active');
+  pendingUploadDataUrl = null;
+  titleInput.value = '';
+  descInput.value = '';
+  selectedFilterId = 'normal';
+}
+function showUploadPanel(which) {
+  panelInitial.style.display = which === 'initial' ? 'flex' : 'none';
+  panelPreview.style.display = which === 'preview' ? 'flex' : 'none';
+}
+function handleFile(file) {
+  if (!file || !file.type || !file.type.startsWith('image/')) { showToast('Please choose an image file'); return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    pendingUploadDataUrl = e.target.result;
+    selectedFilterId = 'normal';
+    previewImg.src = pendingUploadDataUrl;
+    previewImg.style.filter = 'none';
+    buildFilterRow();
+    showUploadPanel('preview');
+  };
+  reader.readAsDataURL(file);
+}
+function buildFilterRow() {
+  filterRow.innerHTML = '';
+  FILTERS.forEach((f) => {
+    const chip = el('button', 'filter-chip' + (f.id === selectedFilterId ? ' active' : ''));
+    chip.type = 'button';
+    chip.dataset.filterId = f.id;
+    const swatch = el('div', 'swatch');
+    const img = document.createElement('img');
+    img.alt = f.label;
+    img.src = pendingUploadDataUrl || '';
+    img.style.filter = f.css;
+    swatch.appendChild(img);
+    chip.appendChild(swatch);
+    chip.appendChild(el('span', null, f.label));
+    chip.addEventListener('click', () => {
+      selectedFilterId = f.id;
+      previewImg.style.filter = f.css;
+      buildFilterRow();
+    });
+    filterRow.appendChild(chip);
+  });
+}
+function shareStory() {
+  if (!pendingUploadDataUrl) { showToast('Choose a photo first'); return; }
+  const title = titleInput.value.trim() || 'Untitled';
+  const desc = descInput.value.trim();
+
+  const newRecord = {
+    id: 'admin_' + Date.now(),
+    file: null,
+    dataUrl: pendingUploadDataUrl,
+    filter: selectedFilterId,
+    name: title,
+    desc: desc,
+    link: '#',
+    links: {
+      whatsapp: buildWaLink(ADMIN_CONFIG.whatsappNumber, `Inquiry about "${title}"`),
+      facebook: '#',
+      tiktok: '#'
+    },
+    _seen: false
+  };
+
+  MasterDatabase.unshift(newRecord);
+  FeedPool.unshift(newRecord);
+  renderFeed(FeedPool);
+  renderStoriesRow();
+  closeUploadOverlay();
+  showToast('Story published ✨');
+  setTimeout(() => openViewer(0), 380);
+}
+function wireDragDrop(targetEl, onDrop, dragClassEl) {
+  targetEl.addEventListener('dragover', (e) => { e.preventDefault(); dragClassEl.classList.add('drag-active'); });
+  targetEl.addEventListener('dragleave', () => dragClassEl.classList.remove('drag-active'));
+  targetEl.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dragClassEl.classList.remove('drag-active');
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (file) onDrop(file);
+  });
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+function showToast(msg, duration = 2200) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastEl._hideTimer);
+  toastEl._hideTimer = setTimeout(() => toastEl.classList.remove('show'), duration);
+}
+
+/* ============================================================
+   EVENT BINDING
+   ============================================================ */
+function bindEvents() {
+  [[zoneLeft, 'left'], [zoneCenter, 'center'], [zoneRight, 'right']].forEach(([zoneEl, zone]) => {
+    zoneEl.addEventListener('pointerdown', (e) => {
+      if (!isViewerOpen) return;
+      startHold();
+      if (zone === 'center') lastPointerPos = { x: e.clientX, y: e.clientY };
+    });
+    zoneEl.addEventListener('pointerup', () => { if (isViewerOpen) handleZonePointerUp(zone); });
+    zoneEl.addEventListener('pointercancel', () => endHold());
+    zoneEl.addEventListener('pointerleave', () => { if (isHeld) endHold(); });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (!isViewerOpen) return;
+    if (e.key === 'ArrowLeft') goToPrevStory();
+    else if (e.key === 'ArrowRight') goToNextStory();
+    else if (e.key === 'Escape') closeViewer();
+    else if (e.key === ' ') { e.preventDefault(); isHeld ? endHold() : startHold(); }
+  });
+
+  viewerCloseBtn.addEventListener('click', closeViewer);
+
+  let touchStartY = 0, touchStartX = 0, isSwipingDown = false;
+  viewerStage.addEventListener('touchstart', (e) => {
+    touchStartY = e.touches[0].clientY;
+    touchStartX = e.touches[0].clientX;
+    isSwipingDown = false;
+  }, { passive: true });
+  viewerStage.addEventListener('touchmove', (e) => {
+    if (!isViewerOpen) return;
+    const dy = e.touches[0].clientY - touchStartY;
+    const dx = e.touches[0].clientX - touchStartX;
+    if (Math.abs(dy) > 30 && Math.abs(dy) > Math.abs(dx) * 1.2 && dy > 0) {
+      isSwipingDown = true;
+      const progress = Math.min(Math.max(dy / 300, 0), 1);
+      storyViewer.style.transform = `translateY(${dy * 0.5}px)`;
+      storyViewer.style.opacity = String(1 - progress * 0.5);
+    }
+  }, { passive: true });
+  viewerStage.addEventListener('touchend', (e) => {
+    if (!isViewerOpen) return;
+    if (isSwipingDown) {
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      storyViewer.style.transform = '';
+      storyViewer.style.opacity = '';
+      isSwipingDown = false;
+      if (dy > 100) closeViewer();
+    }
+  }, { passive: true });
+
+  adminEntryBtn.addEventListener('click', openAdminLogin);
+  adminLoginCloseBtn.addEventListener('click', closeAdminLogin);
+  adminLoginForm.addEventListener('submit', handleAdminLoginSubmit);
+  adminLogoutBtn.addEventListener('click', handleAdminLogout);
+  togglePasswordBtn.addEventListener('click', () => {
+    const showing = adminPasswordInput.type === 'text';
+    adminPasswordInput.type = showing ? 'password' : 'text';
+    togglePasswordBtn.innerHTML = '';
+    const icon = document.createElement('i');
+    icon.className = showing ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
+    togglePasswordBtn.appendChild(icon);
+  });
+  adminLoginOverlay.addEventListener('click', (e) => { if (e.target === adminLoginOverlay) closeAdminLogin(); });
+
+  promoCloseBtn.addEventListener('click', closePromoOverlay);
+  promoWaBtn.addEventListener('click', () => openExternal(buildWaLink(ADMIN_CONFIG.whatsappNumber, "Hi! I'd like to submit a photo to be featured as a story.")));
+  promoAdminLoginLink.addEventListener('click', () => { closePromoOverlay(); openAdminLogin(); });
+  promoOverlay.addEventListener('click', (e) => { if (e.target === promoOverlay) closePromoOverlay(); });
+
+  closeUploadBtn.addEventListener('click', closeUploadOverlay);
+  selectFileBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => { handleFile(e.target.files[0]); e.target.value = ''; });
+  backBtn.addEventListener('click', () => showUploadPanel('initial'));
+  shareBtn.addEventListener('click', shareStory);
+  uploadOverlay.addEventListener('click', (e) => { if (e.target === uploadOverlay) closeUploadOverlay(); });
+  wireDragDrop(panelInitial, handleFile, uploadCard);
+
+  bindSearchEvents();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  bootstrap();
+  console.log('✨ VibeStream + Stories, merged: shared GitHub-backed content, admin-gated uploads, WhatsApp promo gate.');
+});
+</script>
 </body>
 </html>
