@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="ltr">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover, user-scalable=no" />
 <meta name="theme-color" content="#08080c" />
-<title>VibeStream | Feed &amp; Stories</title>
+<title>كورنيش الناصرية | Premium</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 <style>
 /* ============================================================
    0. RESET
@@ -18,9 +18,9 @@ html, body { height: 100%; }
 
 /* ============================================================
    1. DESIGN TOKENS
-   Single source of truth — shared by the feed AND the stories
-   layer so the whole app reads as one product, not two stitched
-   together. Built on the Instagram five-stop brand ramp.
+   Single source of truth — every layout section below (spotlight,
+   rows, grid) reads from these so the app feels like one product.
+   Same token system as the VibeStream build.
    ============================================================ */
 :root {
   --grad-1: #4f5bd5;
@@ -47,6 +47,8 @@ html, body { height: 100%; }
   --text-2: rgba(255, 255, 255, 0.7);
   --text-3: rgba(255, 255, 255, 0.44);
 
+  --price: #feda75;
+
   --fs-2xs: 10px; --fs-xs: 11px; --fs-sm: 12.5px; --fs-base: 14px;
   --fs-md: 15px; --fs-lg: 17px; --fs-xl: 20px; --fs-2xl: 23px;
   --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700; --fw-black: 800;
@@ -64,8 +66,6 @@ html, body { height: 100%; }
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-fast: 150ms; --dur-base: 280ms; --dur-slow: 500ms;
 
-  --ring-size: 68px;
-  --story-duration: 5000ms;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -79,55 +79,82 @@ body {
   background: var(--bg-app);
   color: var(--text-1);
   height: 100dvh;
+  width: 100vw;
   overflow: hidden;
   position: relative;
   user-select: none;
+  display: flex; justify-content: center; align-items: center;
 }
 
 button, input, textarea { font-family: inherit; }
 :focus-visible { outline: 2px solid var(--grad-4); outline-offset: 2px; }
 
-.app { position: relative; width: 100%; height: 100dvh; overflow: hidden; isolation: isolate; }
+.app { position: relative; width: 100%; max-width: 480px; height: 100%; background: var(--bg-app); overflow: hidden; isolation: isolate; box-shadow: var(--shadow-lg); }
+
+.brand-ar { font-family: 'Cairo', 'Inter', sans-serif; }
 
 /* ============================================================
-   2. MAIN FEED  (base screen)
+   2. HEADER  (pinned, glassmorphic — same language as the
+   VibeStream stories-header, minus the stories row)
    ============================================================ */
-#feedContainer {
-  height: 100%;
-  overflow-y: scroll;
-  scroll-snap-type: y mandatory;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  position: relative;
-  z-index: 1;
+.app-header {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 40;
+  padding-top: var(--safe-top);
+  background: linear-gradient(180deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.35) 70%, transparent 100%);
+  pointer-events: none;
 }
-#feedContainer::-webkit-scrollbar { display: none; }
-
-.card {
-  width: 100%; height: 100%;
-  scroll-snap-align: start; scroll-snap-stop: always;
-  position: relative;
+.app-header > * { pointer-events: auto; }
+.brand-row { padding: 14px 16px 10px; display: flex; align-items: center; justify-content: space-between; }
+.brand-title {
+  font-family: 'Cairo', sans-serif; direction: rtl; font-size: var(--fs-xl); font-weight: var(--fw-black);
+  letter-spacing: -0.2px; text-shadow: 0 2px 14px rgba(0,0,0,0.7);
+  background: linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.65));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.brand-title b { background: var(--gradient-linear); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-weight: var(--fw-black); }
+.header-icon-btn {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
   display: flex; align-items: center; justify-content: center;
-  background: #09090b;
-  overflow: hidden;
+  color: #fff; font-size: 15px; cursor: pointer;
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  transition: transform var(--dur-base) var(--ease-spring), background var(--dur-base);
 }
+.header-icon-btn:hover { background: var(--glass-bg-strong); transform: scale(1.08); }
+.header-icon-btn:active { transform: scale(0.9); }
+.header-icon-btn.is-admin { color: var(--grad-5); border-color: rgba(254, 218, 117, 0.5); box-shadow: 0 0 14px rgba(254, 218, 117, 0.25); }
 
-.card .media {
-  width: 100%; height: 100%;
-  object-fit: cover; position: absolute; inset: 0;
-  opacity: 0;
-  animation: fadeInMedia 0.7s var(--ease-smooth) forwards;
-  background: linear-gradient(160deg, var(--surface), var(--surface-2));
-  touch-action: manipulation;
+/* ============================================================
+   3. PAGE SCROLL ROOT  (vertical page scroll; the spotlight and
+   row layouts inside scroll horizontally — mixed-axis by design)
+   ============================================================ */
+#scrollRoot {
+  height: 100%; overflow-y: auto; overflow-x: hidden; scrollbar-width: none;
+  -webkit-overflow-scrolling: touch; position: relative; z-index: 1;
+  padding-top: calc(96px + var(--safe-top));
+  padding-bottom: calc(110px + var(--safe-bottom));
 }
-@keyframes fadeInMedia { to { opacity: 1; } }
+#scrollRoot::-webkit-scrollbar { display: none; }
 
-/* -- glassmorphic center play badge · double-tap-to-open affordance -- */
+.section-heading {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 0 16px; margin-bottom: 12px;
+}
+.section-heading h2 { font-size: var(--fs-lg); font-weight: var(--fw-bold); letter-spacing: 0.1px; }
+.section-heading span { font-size: var(--fs-2xs); color: var(--text-3); font-weight: var(--fw-medium); text-transform: uppercase; letter-spacing: 0.5px; }
+.layout-section { margin-bottom: 34px; }
+.layout-section.hidden-by-search { display: none; }
+
+/* ============================================================
+   4. SHARED CARD PARTS  (play badge + tap ripple + price chip)
+   used by every layout below, exactly like the VibeStream
+   double-tap-to-open feature.
+   ============================================================ */
 .play-badge {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  width: 64px; height: 64px; border-radius: 50%; z-index: 5;
+  width: 60px; height: 60px; border-radius: 50%; z-index: 5;
   display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 21px;
+  color: #fff; font-size: 20px;
   background: var(--glass-bg-strong);
   border: 1px solid rgba(255, 255, 255, 0.34);
   backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%);
@@ -136,6 +163,7 @@ button, input, textarea { font-family: inherit; }
   animation: playBadgeBreathe 3.4s ease-in-out infinite;
 }
 .play-badge i { margin-left: 3px; }
+.play-badge.sm { width: 38px; height: 38px; font-size: 13px; }
 @keyframes playBadgeBreathe {
   0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.85; }
   50% { transform: translate(-50%, -50%) scale(1.07); opacity: 1; }
@@ -143,29 +171,109 @@ button, input, textarea { font-family: inherit; }
 .play-badge.pulse { animation: playBadgeTap 0.45s var(--ease-spring); }
 @keyframes playBadgeTap {
   0% { transform: translate(-50%, -50%) scale(1); }
-  45% { transform: translate(-50%, -50%) scale(1.42); box-shadow: 0 10px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.3); }
+  45% { transform: translate(-50%, -50%) scale(1.4); box-shadow: 0 10px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.3); }
   100% { transform: translate(-50%, -50%) scale(1); }
 }
-
-.card-scrim {
-  position: absolute; inset: 0; z-index: 2; pointer-events: none;
-  background: linear-gradient(180deg, rgba(0,0,0,0.35) 0%, transparent 22%, transparent 55%, rgba(0,0,0,0.7) 100%);
+.tap-ripple {
+  position: absolute; z-index: 20; pointer-events: none; font-size: 42px; color: #fff;
+  opacity: 0; transform: scale(0); animation: ripplePop 0.85s var(--ease-spring) forwards;
 }
-
-.card-info {
-  position: absolute; bottom: calc(118px + var(--safe-bottom)); left: 20px; right: 92px; z-index: 10;
-  pointer-events: none;
-  text-shadow: 0 2px 14px rgba(0,0,0,0.75);
+@keyframes ripplePop {
+  0% { opacity: 0; transform: scale(0.3) translateY(0); }
+  25% { opacity: 1; transform: scale(1.1); }
+  55% { transform: scale(0.92); }
+  100% { opacity: 0; transform: scale(1.02) translateY(-22px); }
 }
-.card-info h3 { font-size: var(--fs-lg); font-weight: var(--fw-bold); letter-spacing: 0.2px; margin-bottom: 5px; }
-.card-info p { font-size: var(--fs-base); color: var(--text-2); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.price-chip {
+  display: inline-flex; align-items: baseline; gap: 3px;
+  background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  padding: 3px 9px; border-radius: var(--radius-full); border: 1px solid rgba(255,255,255,0.14);
+  font-weight: var(--fw-bold); font-size: var(--fs-sm); color: var(--price);
+}
+.price-chip small { font-size: 9px; color: var(--text-2); font-weight: var(--fw-medium); }
+.quick-wa-btn {
+  position: absolute; top: 10px; right: 10px; z-index: 6;
+  width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(37,211,102,0.4);
+  background: rgba(37, 211, 102, 0.24); color: var(--whatsapp);
+  display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  transition: transform var(--dur-base) var(--ease-spring), background var(--dur-base);
+}
+.quick-wa-btn:hover { background: var(--whatsapp); color: #fff; transform: scale(1.08); }
+.quick-wa-btn:active { transform: scale(0.9); }
 
-.actions { position: absolute; bottom: calc(118px + var(--safe-bottom)); right: 14px; display: flex; flex-direction: column; gap: 15px; z-index: 10; }
+/* ============================================================
+   5. LAYOUT A — SPOTLIGHT CAROUSEL  (horizontal scroll-snap,
+   large hero cards, peeking next card)
+   ============================================================ */
+.spotlight-row {
+  display: flex; gap: 14px; overflow-x: auto; padding: 0 16px 6px;
+  scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.spotlight-row::-webkit-scrollbar { display: none; }
+.spotlight-card {
+  position: relative; flex: 0 0 78%; scroll-snap-align: start;
+  aspect-ratio: 3 / 4; border-radius: var(--radius-xl); overflow: hidden;
+  background: linear-gradient(160deg, var(--surface), var(--surface-2));
+  box-shadow: var(--shadow-md);
+}
+.spotlight-card .media { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; opacity: 0; animation: fadeInMedia 0.6s var(--ease-smooth) forwards; touch-action: manipulation; }
+@keyframes fadeInMedia { to { opacity: 1; } }
+.spotlight-card .scrim { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, transparent 35%, rgba(0,0,0,0.82) 100%); }
+.spotlight-card .info { position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 8; pointer-events: none; text-shadow: 0 2px 12px rgba(0,0,0,0.7); }
+.spotlight-card .info .brand-pill { font-size: var(--fs-2xs); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: 0.6px; color: var(--grad-5); margin-bottom: 4px; }
+.spotlight-card .info h3 { font-size: var(--fs-lg); font-weight: var(--fw-bold); margin-bottom: 6px; }
+.spotlight-card .info p { font-size: var(--fs-sm); color: var(--text-2); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 10px; }
+.spotlight-card .info .price-chip { pointer-events: auto; }
 
+/* ============================================================
+   6. LAYOUT B — HORIZONTAL ROWS  (Netflix-style curated rows,
+   medium cards)
+   ============================================================ */
+.row-track {
+  display: flex; gap: 12px; overflow-x: auto; padding: 0 16px 6px;
+  scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.row-track::-webkit-scrollbar { display: none; }
+.row-card {
+  position: relative; flex: 0 0 132px; scroll-snap-align: start;
+  aspect-ratio: 3 / 4; border-radius: var(--radius-md); overflow: hidden;
+  background: linear-gradient(160deg, var(--surface), var(--surface-2));
+  box-shadow: var(--shadow-sm);
+}
+.row-card .media { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; opacity: 0; animation: fadeInMedia 0.6s var(--ease-smooth) forwards; touch-action: manipulation; }
+.row-card .scrim { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.85) 100%); }
+.row-card .info { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 8; pointer-events: none; text-shadow: 0 2px 10px rgba(0,0,0,0.7); }
+.row-card .info h4 { font-size: var(--fs-xs); font-weight: var(--fw-semibold); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ============================================================
+   7. LAYOUT C — GRID  (Instagram-style browse grid; this is
+   the section the search island filters)
+   ============================================================ */
+.products-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 16px; }
+.grid-tile {
+  position: relative; border-radius: var(--radius-md); overflow: hidden;
+  aspect-ratio: 1 / 1.15; background: linear-gradient(160deg, var(--surface), var(--surface-2));
+  box-shadow: var(--shadow-sm);
+  opacity: 0; transform: translateY(14px);
+  animation: tileReveal 0.55s var(--ease-out-expo) forwards;
+}
+@keyframes tileReveal { to { opacity: 1; transform: translateY(0); } }
+.grid-tile .media { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; opacity: 0; animation: fadeInMedia 0.6s var(--ease-smooth) forwards; touch-action: manipulation; }
+.grid-tile .scrim { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: linear-gradient(180deg, transparent 45%, rgba(0,0,0,0.86) 100%); }
+.grid-tile .info { position: absolute; left: 10px; right: 10px; bottom: 9px; z-index: 8; pointer-events: none; text-shadow: 0 2px 10px rgba(0,0,0,0.7); }
+.grid-tile .info h4 { font-size: var(--fs-xs); font-weight: var(--fw-semibold); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.grid-empty { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 20px; color: var(--text-3); text-align: center; }
+.grid-empty i { font-size: 2rem; opacity: 0.5; }
+
+/* ============================================================
+   8. ACTION BUTTONS  (WhatsApp / Facebook / TikTok — used inside
+   the product quick-view modal)
+   ============================================================ */
 .action-btn {
-  width: 50px; height: 50px; border-radius: 50%; border: 1px solid var(--glass-border);
+  width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--glass-border);
   display: flex; align-items: center; justify-content: center;
-  font-size: 20px; color: #fff; cursor: pointer;
+  font-size: 18px; color: #fff; cursor: pointer;
   background: var(--glass-bg); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   box-shadow: var(--shadow-sm);
   transition: transform var(--dur-base) var(--ease-spring), background var(--dur-base) var(--ease-smooth), box-shadow var(--dur-base);
@@ -179,168 +287,65 @@ button, input, textarea { font-family: inherit; }
 .btn-tt { background: rgba(255,255,255,0.08); color: #fff; border-color: rgba(255,255,255,0.28); }
 .btn-tt:hover { background: linear-gradient(135deg, var(--grad-3), var(--grad-2)); box-shadow: 0 6px 24px rgba(214,41,118,0.4); }
 
-.scroll-trigger { height: 10px; width: 100%; position: absolute; bottom: 0; }
-
-.empty-state { flex-direction: column; gap: 12px; }
-.empty-state i { font-size: 2.4rem; color: rgba(255,255,255,0.16); }
-.empty-state p { color: var(--text-3); font-size: var(--fs-base); }
-
 /* ============================================================
-   3. STORIES HEADER  (pinned overlay at the top of the feed)
+   9. PRODUCT QUICK-VIEW MODAL  (single-tap on any card — large
+   image, full text, price, actions, close button)
    ============================================================ */
-.stories-header {
-  position: absolute; top: 0; left: 0; right: 0; z-index: 40;
-  padding-top: var(--safe-top);
-  background: linear-gradient(180deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
-  pointer-events: none;
+.product-modal-overlay {
+  position: absolute; inset: 0; z-index: 220;
+  background: rgba(4,4,8,0.82); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  display: none; align-items: center; justify-content: center; padding: 22px;
 }
-.stories-header > * { pointer-events: auto; }
-
-.brand-row {
-  padding: 12px 16px 4px; display: flex; align-items: center; justify-content: space-between;
+.product-modal-overlay.active { display: flex; }
+.product-modal-card {
+  width: 100%; max-width: 360px; max-height: 88vh; overflow-y: auto; scrollbar-width: none;
+  border-radius: var(--radius-xl); background: var(--surface); box-shadow: var(--shadow-lg);
+  position: relative; animation: modalIn var(--dur-slow) var(--ease-spring);
 }
-.brand-title {
-  font-size: var(--fs-xl); font-weight: var(--fw-black); letter-spacing: -0.4px;
-  background: linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.6));
-  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-}
-.header-icon-btn {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: var(--glass-bg); border: 1px solid var(--glass-border);
-  display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 14px; cursor: pointer;
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+.product-modal-card::-webkit-scrollbar { display: none; }
+@keyframes modalIn { from { opacity: 0; transform: scale(0.88) translateY(24px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.product-modal-close {
+  position: absolute; top: 14px; right: 14px; z-index: 5;
+  width: 38px; height: 38px; border-radius: 50%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2);
+  color: #fff; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   transition: transform var(--dur-base) var(--ease-spring), background var(--dur-base);
 }
-.header-icon-btn:hover { background: var(--glass-bg-strong); transform: scale(1.08); }
-.header-icon-btn:active { transform: scale(0.9); }
-.header-icon-btn.is-admin { color: var(--grad-5); border-color: rgba(254, 218, 117, 0.5); box-shadow: 0 0 14px rgba(254, 218, 117, 0.25); }
-
-.stories-row {
-  padding: 6px 14px 14px; display: flex; gap: 14px; overflow-x: auto; overflow-y: visible;
-  scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+.product-modal-close:hover { background: rgba(255,255,255,0.2); transform: rotate(90deg); }
+.product-modal-media { position: relative; width: 100%; aspect-ratio: 4 / 5; overflow: hidden; background: var(--surface-2); }
+.product-modal-media img {
+  width: 100%; height: 100%; object-fit: cover;
+  animation: modalMediaZoom 0.7s var(--ease-out-expo) both;
 }
-.stories-row::-webkit-scrollbar { display: none; }
-
-.story-avatar-wrap {
-  scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; gap: 6px;
-  cursor: pointer; flex-shrink: 0; width: var(--ring-size);
-  transition: transform var(--dur-base) var(--ease-spring);
-  background: none; border: none; padding: 0;
+@keyframes modalMediaZoom { from { transform: scale(1.15); opacity: 0.4; } to { transform: scale(1); opacity: 1; } }
+.product-modal-media::after {
+  content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, var(--surface) 100%);
 }
-.story-avatar-wrap:active { transform: scale(0.9); }
-.story-avatar-wrap:hover { transform: translateY(-3px); }
-
-.story-ring { width: var(--ring-size); height: var(--ring-size); border-radius: 50%; position: relative; }
-.story-ring::before {
-  content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--surface-2);
+.product-modal-body { padding: 4px 20px 22px; display: flex; flex-direction: column; gap: 10px; margin-top: -28px; position: relative; z-index: 2; }
+.product-modal-body .brand-pill {
+  font-size: var(--fs-2xs); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: 0.6px; color: var(--grad-5);
+  animation: modalFadeUp 0.5s var(--ease-out-expo) 0.05s both;
 }
-.story-ring.has-unseen::before {
-  background: var(--gradient-story); animation: ringSpin 5.5s linear infinite;
-  box-shadow: 0 0 14px rgba(150,47,191,0.3), 0 0 30px rgba(214,41,118,0.14);
+.product-modal-body h2 { font-size: var(--fs-2xl); font-weight: var(--fw-bold); letter-spacing: -0.2px; animation: modalFadeUp 0.5s var(--ease-out-expo) 0.1s both; }
+.product-modal-body p { font-size: var(--fs-base); color: var(--text-2); line-height: 1.6; animation: modalFadeUp 0.5s var(--ease-out-expo) 0.16s both; }
+@keyframes modalFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.modal-price-wrap { margin: 4px 0 2px; animation: modalFadeUp 0.5s var(--ease-out-expo) 0.22s both; }
+.price-chip.lg {
+  font-size: var(--fs-xl); padding: 8px 18px; position: relative; overflow: hidden;
+  background: rgba(254,218,117,0.1); border-color: rgba(254,218,117,0.35);
 }
-@keyframes ringSpin { to { transform: rotate(360deg); } }
-
-.ring-bg {
-  position: absolute; inset: 4px; border-radius: 50%; overflow: hidden; background: #1a1a24;
-  box-shadow: 0 0 0 3px var(--bg-app); z-index: 1;
+.price-chip.lg::after {
+  content: ''; position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+  background: linear-gradient(115deg, transparent, rgba(255,255,255,0.35), transparent); transform: skewX(-20deg);
+  animation: priceShine 1.4s var(--ease-smooth) 0.5s;
 }
-.ring-bg img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.ring-bg .initials { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: var(--fw-bold); font-size: 19px; color: #fff; }
-
-.story-avatar-wrap .username {
-  font-size: var(--fs-2xs); font-weight: var(--fw-medium); color: var(--text-2);
-  max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center;
-}
-.story-avatar-wrap:hover .username { color: #fff; }
-
-.story-avatar-wrap.add-story .story-ring::before { background: transparent; }
-.story-avatar-wrap.add-story .story-ring { animation: addIdlePulse 4.5s ease-in-out infinite; }
-@keyframes addIdlePulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
-.story-avatar-wrap.add-story .add-icon {
-  position: absolute; inset: 0; border-radius: 50%;
-  background: linear-gradient(135deg, var(--grad-2), var(--grad-3));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 24px; color: #fff; box-shadow: 0 0 22px rgba(150,47,191,0.4);
-  box-shadow: 0 0 0 3px var(--bg-app), 0 0 22px rgba(150,47,191,0.4);
-}
+@keyframes priceShine { from { left: -60%; } to { left: 140%; } }
+.product-modal-actions { display: flex; gap: 12px; margin-top: 6px; animation: modalFadeUp 0.5s var(--ease-out-expo) 0.28s both; }
+.product-modal-actions .action-btn { width: 50px; height: 50px; font-size: 19px; }
 
 /* ============================================================
-   4. STORY VIEWER  (full-screen overlay)
-   ============================================================ */
-.story-viewer {
-  position: absolute; inset: 0; z-index: 100; background: #000;
-  display: none; flex-direction: column;
-  transition: transform var(--dur-slow) var(--ease-smooth), opacity var(--dur-slow) var(--ease-smooth);
-}
-.story-viewer.open { display: flex; }
-
-.viewer-progress-row {
-  position: absolute; top: calc(10px + var(--safe-top)); left: 10px; right: 10px; z-index: 20;
-  display: flex; gap: 4px;
-}
-.progress-track { flex: 1; height: 2.5px; border-radius: var(--radius-full); background: rgba(255,255,255,0.28); overflow: hidden; }
-.progress-fill { height: 100%; width: 0%; background: #fff; border-radius: inherit; }
-.progress-track.complete .progress-fill { width: 100% !important; }
-
-.viewer-header {
-  position: absolute; top: calc(24px + var(--safe-top)); left: 14px; right: 14px; z-index: 20;
-  display: flex; align-items: center; gap: 10px;
-}
-.viewer-avatar { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; background: var(--surface-2); flex-shrink: 0; box-shadow: 0 0 0 1.5px rgba(255,255,255,0.3); }
-.viewer-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.viewer-username { font-size: var(--fs-sm); font-weight: var(--fw-semibold); flex: 1; text-shadow: 0 1px 6px rgba(0,0,0,0.6); }
-.viewer-close {
-  width: 36px; height: 36px; border-radius: 50%; background: rgba(0,0,0,0.3); border: none; color: #fff;
-  font-size: 17px; display: flex; align-items: center; justify-content: center; cursor: pointer;
-  backdrop-filter: blur(10px); transition: transform var(--dur-base) var(--ease-spring), background var(--dur-base);
-}
-.viewer-close:hover { background: rgba(255,255,255,0.16); transform: rotate(90deg); }
-
-.viewer-stage { position: relative; flex: 1; overflow: hidden; background: #000; }
-.viewer-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.viewer-scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 20%, transparent 60%, rgba(0,0,0,0.65) 100%); pointer-events: none; }
-
-.story-caption {
-  position: absolute; left: 18px; right: 18px; bottom: 96px; z-index: 8;
-  font-size: var(--fs-base); line-height: 1.5; color: #fff; text-shadow: 0 2px 12px rgba(0,0,0,0.8);
-  opacity: 0; transform: translateY(8px);
-  transition: opacity var(--dur-slow) var(--ease-smooth), transform var(--dur-slow) var(--ease-smooth);
-  pointer-events: none;
-}
-.story-caption.show { opacity: 1; transform: translateY(0); }
-.story-caption .cap-title { font-weight: var(--fw-bold); font-size: var(--fs-lg); margin-bottom: 4px; display: block; }
-
-.hold-indicator {
-  position: absolute; left: 50%; top: 50%; z-index: 7; width: 54px; height: 54px; border-radius: 50%;
-  background: rgba(0,0,0,0.4); backdrop-filter: blur(10px);
-  display: flex; align-items: center; justify-content: center; font-size: 19px; color: #fff;
-  opacity: 0; transform: translate(-50%, -50%) scale(0.7);
-  transition: opacity var(--dur-fast), transform var(--dur-fast) var(--ease-spring); pointer-events: none;
-}
-.story-viewer.holding .hold-indicator { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-
-.tap-zones { position: absolute; inset: 0; z-index: 6; display: flex; }
-.tap-zones .zone { flex: 1; touch-action: manipulation; }
-.zone-left { flex: 0 0 30%; cursor: w-resize; }
-.zone-right { flex: 0 0 30%; cursor: e-resize; }
-.zone-center { flex: 1; cursor: default; }
-
-.viewer-actions {
-  position: relative; z-index: 10; flex-shrink: 0;
-  display: flex; gap: 12px; padding: 10px 16px calc(14px + var(--safe-bottom));
-}
-.viewer-actions .action-btn { width: 46px; height: 46px; font-size: 18px; }
-.viewer-actions .va-label { flex: 1; display: flex; align-items: center; color: var(--text-3); font-size: var(--fs-xs); }
-
-.heart-burst {
-  position: absolute; z-index: 20; pointer-events: none; font-size: 56px; color: #fff;
-  opacity: 0; transform: scale(0); animation: heartPop 0.85s var(--ease-spring) forwards;
-}
-@keyframes heartPop { 0% { opacity: 0; transform: scale(0.3) translateY(0); } 25% { opacity: 1; transform: scale(1.15); } 55% { transform: scale(0.95); } 100% { opacity: 0; transform: scale(1.05) translateY(-26px); } }
-
-/* ============================================================
-   5. SHARED OVERLAY SHELL  (upload / admin login / promo)
+   10. SHARED OVERLAY SHELL  (upload / admin login / promo —
+   identical component set to the VibeStream build)
    ============================================================ */
 .sheet-overlay {
   position: absolute; inset: 0; z-index: 200;
@@ -406,9 +411,7 @@ button, input, textarea { font-family: inherit; }
 }
 .link-btn:hover { color: #fff; }
 
-.field {
-  width: 100%; display: flex; flex-direction: column; gap: 6px; text-align: left;
-}
+.field { width: 100%; display: flex; flex-direction: column; gap: 6px; text-align: left; }
 .field label { font-size: var(--fs-2xs); color: var(--text-3); font-weight: var(--fw-medium); letter-spacing: 0.3px; text-transform: uppercase; padding-left: 4px; }
 .field .input-wrap { position: relative; display: flex; align-items: center; }
 .field input, .field textarea {
@@ -419,11 +422,11 @@ button, input, textarea { font-family: inherit; }
 .field input::placeholder, .field textarea::placeholder { color: var(--text-3); }
 .field input:focus, .field textarea:focus { outline: none; border-color: rgba(255,255,255,0.32); background: var(--glass-bg-strong); }
 .field textarea { resize: none; min-height: 64px; font-family: inherit; }
-.field .peek-btn {
-  position: absolute; right: 10px; background: none; border: none; color: var(--text-3); cursor: pointer; font-size: 14px; padding: 6px;
-}
+.field .peek-btn { position: absolute; right: 10px; background: none; border: none; color: var(--text-3); cursor: pointer; font-size: 14px; padding: 6px; }
 .field.error input { border-color: var(--grad-3); }
 .field-error-msg { font-size: var(--fs-2xs); color: var(--grad-3); padding-left: 4px; min-height: 14px; }
+.field-row { display: flex; gap: 10px; width: 100%; }
+.field-row .field { flex: 1; }
 
 /* -- upload preview step -- */
 .preview-frame {
@@ -456,7 +459,7 @@ button, input, textarea { font-family: inherit; }
 .admin-badge-row i { color: var(--grad-5); }
 
 /* ============================================================
-   6. SEARCH ISLAND
+   11. SEARCH ISLAND
    ============================================================ */
 #searchIsland {
   position: fixed; bottom: calc(24px + var(--safe-bottom)); left: 50%; transform: translateX(-50%);
@@ -482,7 +485,7 @@ button, input, textarea { font-family: inherit; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ============================================================
-   7. TOAST
+   12. TOAST
    ============================================================ */
 .toast {
   position: absolute; bottom: calc(96px + var(--safe-bottom)); left: 50%; transform: translateX(-50%) translateY(80px);
@@ -493,76 +496,134 @@ button, input, textarea { font-family: inherit; }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+.fab-add-btn {
+  position: fixed; bottom: calc(24px + var(--safe-bottom)); left: 18px; z-index: 50;
+  width: 54px; height: 54px; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--gradient-story);
+  display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px;
+  box-shadow: var(--shadow-lg), 0 0 20px rgba(150,47,191,0.35);
+  transition: transform var(--dur-base) var(--ease-spring);
+}
+.fab-add-btn:hover { transform: scale(1.08); }
+.fab-add-btn:active { transform: scale(0.9); }
+
+/* ============================================================
+   13. CELEBRATION EFFECTS  (confetti · sparks · firework bursts —
+   reserved for meaningful moments: publishing, ordering, and the
+   smart-search price relocation settling)
+   ============================================================ */
+.confetti-piece {
+  position: absolute; width: 7px; height: 11px; border-radius: 2px; z-index: 400; pointer-events: none;
+  will-change: transform, opacity;
+  animation: confettiFly 1100ms cubic-bezier(0.16,1,0.3,1) forwards;
+}
+@keyframes confettiFly {
+  0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)) scale(0.4); opacity: 0; }
+}
+.spark-particle {
+  position: absolute; width: 5px; height: 5px; border-radius: 50%; background: currentColor; z-index: 400; pointer-events: none;
+  box-shadow: 0 0 8px 2px currentColor; will-change: transform, opacity;
+  animation: sparkFly 650ms ease-out forwards;
+}
+@keyframes sparkFly {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0); opacity: 0; }
+}
+
+/* ============================================================
+   14. SMART-SEARCH PRICE RELOCATE  (FLIP re-order + settle glow)
+   ============================================================ */
+.grid-tile.price-settled {
+  animation: settleGlow 0.9s var(--ease-spring);
+}
+@keyframes settleGlow {
+  0% { box-shadow: var(--shadow-sm); }
+  35% { box-shadow: 0 0 0 2px var(--grad-5), 0 0 26px rgba(254,218,117,0.55); }
+  100% { box-shadow: var(--shadow-sm); }
+}
+.grid-price-badge {
+  position: absolute; top: 10px; left: 10px; z-index: 6;
+  background: rgba(0,0,0,0.5); color: var(--grad-5); font-size: 9px; font-weight: var(--fw-bold);
+  padding: 3px 8px; border-radius: var(--radius-full); border: 1px solid rgba(254,218,117,0.4);
+  opacity: 0; transform: translateY(-6px); transition: all var(--dur-base) var(--ease-spring);
+  pointer-events: none; text-transform: uppercase; letter-spacing: 0.4px;
+}
+.grid-price-badge.show { opacity: 1; transform: translateY(0); }
+
 @media (max-width: 380px) {
-  :root { --ring-size: 62px; }
-  .card-info { right: 78px; }
+  .spotlight-card { flex-basis: 84%; }
+  .row-card { flex: 0 0 118px; }
+  .product-modal-card { max-width: 100%; }
+  .product-modal-body h2 { font-size: var(--fs-xl); }
+}
+
+@media (max-height: 700px) {
+  .product-modal-media { aspect-ratio: 4 / 4; }
 }
 </style>
 </head>
 <body>
 <div class="app" id="app">
 
-  <!-- MAIN FEED (base screen) -->
-  <div id="feedContainer" aria-label="Feed"></div>
-
-  <!-- STORIES HEADER (overlay pinned to top of the feed) -->
-  <header class="stories-header">
+  <!-- HEADER -->
+  <header class="app-header">
     <div class="brand-row">
-      <span class="brand-title">VibeStream</span>
+      <span class="brand-title">كورنيش <b>الناصرية</b></span>
       <button class="header-icon-btn" id="adminEntryBtn" title="Admin" aria-label="Admin">
         <i class="fa-solid fa-shield-halved" id="adminIcon"></i>
       </button>
     </div>
-    <div class="stories-row" id="storiesRow" aria-label="Stories"></div>
   </header>
+
+  <!-- PAGE SCROLL ROOT -->
+  <main id="scrollRoot">
+
+    <!-- LAYOUT A — SPOTLIGHT CAROUSEL -->
+    <section class="layout-section" id="spotlightSection">
+      <div class="section-heading"><h2>Spotlight</h2><span>Swipe →</span></div>
+      <div class="spotlight-row" id="spotlightRow"></div>
+    </section>
+
+    <!-- LAYOUT B — HORIZONTAL ROWS -->
+    <section class="layout-section" id="trendingSection">
+      <div class="section-heading"><h2>Trending Now</h2><span>Swipe →</span></div>
+      <div class="row-track" id="trendingRow"></div>
+    </section>
+
+    <section class="layout-section" id="newSection">
+      <div class="section-heading"><h2>New Arrivals</h2><span>Swipe →</span></div>
+      <div class="row-track" id="newRow"></div>
+    </section>
+
+    <!-- LAYOUT C — GRID (searchable) -->
+    <section class="layout-section" id="gridSection">
+      <div class="section-heading"><h2>All Products</h2><span id="gridCount"></span></div>
+      <div class="products-grid" id="productsGrid"></div>
+    </section>
+
+  </main>
+
+  <!-- ADD PRODUCT FAB -->
+  <button class="fab-add-btn" id="fabAddBtn" aria-label="Add product"><i class="fa-solid fa-plus"></i></button>
 
   <!-- SEARCH ISLAND -->
   <div id="searchIsland">
     <i class="fa-solid fa-search search-icon"></i>
-    <input type="text" id="searchInput" placeholder="Search the feed..." autocomplete="off">
+    <input type="text" id="searchInput" placeholder="Search products, brands..." autocomplete="off">
     <div class="island-loader" id="searchLoader"></div>
     <button class="search-action-btn" id="clearSearchBtn" aria-label="Clear search">
       <i class="fa-solid fa-times"></i>
     </button>
   </div>
 
-  <!-- STORY VIEWER -->
-  <div class="story-viewer" id="storyViewer" role="dialog" aria-modal="true" aria-label="Story viewer">
-    <div class="viewer-progress-row" id="progressRow"></div>
-    <div class="viewer-header">
-      <div class="viewer-avatar"><img id="viewerAvatarImg" src="" alt=""></div>
-      <div class="viewer-username" id="viewerUsername"></div>
-      <button class="viewer-close" id="viewerCloseBtn" aria-label="Close story"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="viewer-stage" id="viewerStage">
-      <img class="viewer-media" id="viewerMedia" src="" alt="">
-      <div class="viewer-scrim"></div>
-      <div class="story-caption" id="storyCaption">
-        <span class="cap-title" id="captionTitle"></span>
-        <span id="captionDesc"></span>
-      </div>
-      <div class="hold-indicator" id="holdIndicator"><i class="fa-solid fa-pause"></i></div>
-      <div class="tap-zones">
-        <div class="zone zone-left" id="zoneLeft"></div>
-        <div class="zone zone-center" id="zoneCenter"></div>
-        <div class="zone zone-right" id="zoneRight"></div>
-      </div>
-    </div>
-    <div class="viewer-actions">
-      <button class="action-btn btn-wa" id="viewerWaBtn" title="Share via WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
-      <button class="action-btn btn-fb" id="viewerFbBtn" title="View on Facebook"><i class="fa-brands fa-facebook-f"></i></button>
-      <button class="action-btn btn-tt" id="viewerTtBtn" title="Watch on TikTok"><i class="fa-brands fa-tiktok"></i></button>
-      <span class="va-label">Double-tap to like</span>
-    </div>
-  </div>
-
-  <!-- PROMO / CONTACT-ADMIN GATE (shown to non-admins on upload attempt) -->
+  <!-- PROMO / CONTACT-ADMIN GATE -->
   <div class="sheet-overlay" id="promoOverlay">
     <div class="sheet-card">
       <button class="sheet-close" id="promoCloseBtn" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
       <div class="sheet-icon wa-tone"><i class="fa-solid fa-bullhorn"></i></div>
-      <h2>Want to be featured?</h2>
-      <p class="sub">Stories are curated by our team. Send your photo or video to our admin on WhatsApp and we'll get it published for you.</p>
+      <h2>Want it featured?</h2>
+      <p class="sub">Products are curated by our team. Send us your product on WhatsApp and we'll get it listed for you.</p>
       <button class="btn-primary wa-tone" id="promoWaBtn"><i class="fa-brands fa-whatsapp"></i>&nbsp; Message us on WhatsApp</button>
       <button class="link-btn" id="promoAdminLoginLink">I'm the admin — log in</button>
     </div>
@@ -574,7 +635,7 @@ button, input, textarea { font-family: inherit; }
       <button class="sheet-close" id="adminLoginCloseBtn" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
       <div class="sheet-icon"><i class="fa-solid fa-lock"></i></div>
       <h2 id="adminLoginTitle">Admin Login</h2>
-      <p class="sub" id="adminLoginSub">Sign in to upload and manage stories.</p>
+      <p class="sub" id="adminLoginSub">Sign in to add and manage products.</p>
       <form id="adminLoginForm" style="width:100%; display:flex; flex-direction:column; gap:12px;">
         <div class="field">
           <label for="adminUsername">Username</label>
@@ -601,8 +662,8 @@ button, input, textarea { font-family: inherit; }
 
       <div class="upload-panel visible" id="panelInitial" style="display:flex; flex-direction:column; align-items:center; gap:16px;">
         <div class="sheet-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
-        <h2>Publish a story</h2>
-        <p class="sub">Choose a photo to add to the stories row and feed.</p>
+        <h2>Publish a product</h2>
+        <p class="sub">Choose a photo to add it to every layout on the page.</p>
         <button class="btn-primary" id="selectFileBtn"><i class="fa-solid fa-image"></i>&nbsp; Choose photo</button>
         <div class="upload-drop-hint">or drag &amp; drop a photo here</div>
         <input type="file" id="fileInput" accept="image/*">
@@ -614,11 +675,21 @@ button, input, textarea { font-family: inherit; }
         <div class="filter-row" id="filterRow"></div>
         <div class="field">
           <label for="titleInput">Title</label>
-          <input type="text" id="titleInput" placeholder="Give it a name" maxlength="40">
+          <input type="text" id="titleInput" placeholder="Product name" maxlength="60">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="priceInput">Price (IQD)</label>
+            <input type="number" id="priceInput" step="500" min="0" placeholder="75000">
+          </div>
+          <div class="field">
+            <label for="brandInput">Brand</label>
+            <input type="text" id="brandInput" placeholder="Brand" maxlength="30">
+          </div>
         </div>
         <div class="field">
           <label for="descInput">Description</label>
-          <textarea id="descInput" placeholder="A line about this moment..." maxlength="160"></textarea>
+          <textarea id="descInput" placeholder="A line about this product..." maxlength="160"></textarea>
         </div>
         <div class="step-actions">
           <button class="btn-secondary" id="backBtn">Back</button>
@@ -628,12 +699,28 @@ button, input, textarea { font-family: inherit; }
     </div>
   </div>
 
+  <!-- PRODUCT QUICK-VIEW MODAL -->
+  <div class="product-modal-overlay" id="productModalOverlay">
+    <div class="product-modal-card" id="productModalCard">
+      <button class="product-modal-close" id="productModalClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      <div class="product-modal-media"><img id="productModalImg" src="" alt=""></div>
+      <div class="product-modal-body">
+        <div class="brand-pill" id="productModalBrand"></div>
+        <h2 id="productModalTitle"></h2>
+        <p id="productModalDesc"></p>
+        <div class="modal-price-wrap"><span class="price-chip lg" id="productModalPrice"></span></div>
+        <div class="product-modal-actions" id="productModalActions"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 </div>
 <script>
 /* ============================================================
    CONFIG
-   Replace these with real values before shipping.
+   Same GitHub-raw asset backend as the VibeStream build —
+   replace these with real values before shipping.
    ============================================================ */
 const GITHUB_CONFIG = {
   username: "TrndBrnd-link",
@@ -659,31 +746,39 @@ const FILTERS = [
 ];
 
 /* ============================================================
-   SEED DATA  (single backend behind both the feed and stories)
+   SEED DATA  (single backend behind every layout section — same
+   GitHub asset files as VibeStream, extended with price/brand
+   for the shop context)
    ============================================================ */
 class ContentDatabase {
   static async getRecords() {
     await new Promise((resolve) => setTimeout(resolve, 200));
     return [
-      { id: 'img1', file: '2.jpg', name: 'Mountain Sunset', desc: 'A breathtaking view of rocky mountains during golden hour. The sky transitions from deep orange to purple, casting long shadows across the valley below.',
-        link: 'https://example.com/stories/mountain-sunset',
+      { id: 'p1', file: '2.jpg', name: 'Mountain Sunset', brand: 'Corniche Originals', price: 90000,
+        desc: 'A breathtaking view of rocky mountains during golden hour. The sky transitions from deep orange to purple, casting long shadows across the valley below.',
+        link: 'https://example.com/products/mountain-sunset',
         links: { whatsapp: 'https://wa.me/9647800000001?text=Inquiry%20Mountain%20Sunset', facebook: 'https://facebook.com/yourpage/posts/mountain-sunset-id', tiktok: 'https://tiktok.com/@yourprofile/video/mountain-sunset-id' } },
-      { id: 'img2', file: '3.jpg', name: 'Ocean Horizon', desc: 'Crystal clear blue waters crashing against white sand beaches. The tropical ocean view provides a calming, serene atmosphere perfect for summer vibes.',
-        link: 'https://example.com/stories/ocean-horizon',
+      { id: 'p2', file: '3.jpg', name: 'Ocean Horizon', brand: 'Corniche Originals', price: 65000,
+        desc: 'Crystal clear blue waters crashing against white sand beaches. The tropical ocean view provides a calming, serene atmosphere perfect for summer vibes.',
+        link: 'https://example.com/products/ocean-horizon',
         links: { whatsapp: 'https://wa.me/9647800000002?text=Inquiry%20Ocean%20Horizon', facebook: 'https://facebook.com/yourpage/posts/ocean-horizon-id', tiktok: 'https://tiktok.com/@yourprofile/video/ocean-horizon-id' } },
-      { id: 'img3', file: '4.jpg', name: 'Cyberpunk City', desc: 'Urban nightlife captured in a neon-lit metropolis. Towering skyscrapers, flying vehicles, and glowing street signs create a moody, futuristic atmosphere.',
-        link: 'https://example.com/stories/cyberpunk-city',
+      { id: 'p3', file: '4.jpg', name: 'Cyberpunk City', brand: 'Corniche Nights', price: 120000,
+        desc: 'Urban nightlife captured in a neon-lit metropolis. Towering skyscrapers, flying vehicles, and glowing street signs create a moody, futuristic atmosphere.',
+        link: 'https://example.com/products/cyberpunk-city',
         links: { whatsapp: 'https://wa.me/9647800000003?text=Inquiry%20Cyberpunk%20City', facebook: 'https://facebook.com/yourpage/posts/cyberpunk-city-id', tiktok: 'https://tiktok.com/@yourprofile/video/cyberpunk-city-id' } },
-      { id: 'img4', file: '5.jpg', name: 'Emerald Forest', desc: 'Deep within an ancient woodland, sunlight pierces through the thick canopy of green leaves. Mist hovers cleanly above the damp, mossy ground.',
-        link: 'https://example.com/stories/emerald-forest',
+      { id: 'p4', file: '5.jpg', name: 'Emerald Forest', brand: 'Corniche Originals', price: 78000,
+        desc: 'Deep within an ancient woodland, sunlight pierces through the thick canopy of green leaves. Mist hovers cleanly above the damp, mossy ground.',
+        link: 'https://example.com/products/emerald-forest',
         links: { whatsapp: 'https://wa.me/9647800000004?text=Inquiry%20Emerald%20Forest', facebook: 'https://facebook.com/yourpage/posts/emerald-forest-id', tiktok: 'https://tiktok.com/@yourprofile/video/emerald-forest-id' } },
-      { id: 'img5', file: '6.jpg', name: 'Sahara Dunes', desc: 'Endless rolling sand dunes under a blazing sun. The warm, arid landscape features sharp ridges sculpted by shifting desert winds.',
-        link: 'https://example.com/stories/sahara-dunes',
+      { id: 'p5', file: '6.jpg', name: 'Sahara Dunes', brand: 'Corniche Heritage', price: 95000,
+        desc: 'Endless rolling sand dunes under a blazing sun. The warm, arid landscape features sharp ridges sculpted by shifting desert winds.',
+        link: 'https://example.com/products/sahara-dunes',
         links: { whatsapp: 'https://wa.me/9647800000005?text=Inquiry%20Sahara%20Dunes', facebook: 'https://facebook.com/yourpage/posts/sahara-dunes-id', tiktok: 'https://tiktok.com/@yourprofile/video/sahara-dunes-id' } },
-      { id: 'img6', file: '7.jpg', name: 'Arctic Peak', desc: 'A frozen tundra featuring massive glaciers and snow-capped mountains. The cold, crisp air and blue ice create a beautiful winter wonderland.',
-        link: 'https://example.com/stories/arctic-peak',
+      { id: 'p6', file: '7.jpg', name: 'Arctic Peak', brand: 'Corniche Heritage', price: 135000,
+        desc: 'A frozen tundra featuring massive glaciers and snow-capped mountains. The cold, crisp air and blue ice create a beautiful winter wonderland.',
+        link: 'https://example.com/products/arctic-peak',
         links: { whatsapp: 'https://wa.me/9647800000006?text=Inquiry%20Arctic%20Peak', facebook: 'https://facebook.com/yourpage/posts/arctic-peak-id', tiktok: 'https://tiktok.com/@yourprofile/video/arctic-peak-id' } }
-    ].map((r) => ({ ...r, dataUrl: null, filter: 'normal', _seen: false }));
+    ].map((r, i) => ({ ...r, dataUrl: null, filter: 'normal', _seq: i }));
   }
 }
 
@@ -698,16 +793,6 @@ function randomizeArray(array) {
   }
   return copy;
 }
-function getInitials(name) {
-  return (name || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
-}
-function userGradient(seed) {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) hash = seed.charCodeAt(i) + ((hash << 5) - hash);
-  const h1 = Math.abs(hash) % 360;
-  const h2 = (h1 + 55) % 360;
-  return `linear-gradient(135deg, hsl(${h1},70%,52%), hsl(${h2},70%,45%))`;
-}
 function resolveMediaUrl(record) {
   return record.dataUrl || (GITHUB_BASE_URL + record.file);
 }
@@ -717,7 +802,7 @@ function resolveFilterCss(record) {
 }
 function handleImageFallback(imgEl, label) {
   imgEl.onerror = null;
-  imgEl.src = `https://placehold.co/1080x1920/18181b/ffffff?text=${encodeURIComponent(label)}`;
+  imgEl.src = `https://placehold.co/1080x1350/18181b/ffffff?text=${encodeURIComponent(label)}`;
 }
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -735,59 +820,58 @@ function openExternal(url) {
     showToast("That link isn't set up yet");
   }
 }
+function formatPrice(n) {
+  const value = Math.round(Number(n) || 0);
+  return value.toLocaleString('en-US') + ' IQD';
+}
+function getRelativeCenter(targetEl) {
+  const appRect = document.getElementById('app').getBoundingClientRect();
+  const r = targetEl.getBoundingClientRect();
+  return { x: r.left + r.width / 2 - appRect.left, y: r.top + r.height / 2 - appRect.top };
+}
 
 /* ============================================================
    STATE
    ============================================================ */
-let MasterDatabase = [];   // every record — backs both the feed and the stories row
-let FeedPool = [];         // shuffled working copy for the main feed
+let MasterDatabase = [];   // every product — backs every layout section
 let isAdmin = false;
 let pendingUploadDataUrl = null;
 let selectedFilterId = 'normal';
-
-/* -- story viewer state -- */
-let storyOrder = [];       // indices into MasterDatabase, in viewing order
-let currentStoryPos = -1;
-let isViewerOpen = false;
-let isHeld = false;
-let holdStartAt = 0;
-let elapsedBeforeHold = 0;
-let storyStartedAt = 0;
-let progressRAF = null;
-let lastTapTime = 0;
-let lastPointerPos = { x: 0, y: 0 };
-const STORY_DURATION = 5000;
+let isSearchActive = false;
+let seqCounter = 0;        // insertion order, newest = highest — powers "New Arrivals"
 
 /* ============================================================
    DOM REFS
    ============================================================ */
-const feedContainer = document.getElementById('feedContainer');
-const storiesRow = document.getElementById('storiesRow');
+const scrollRoot = document.getElementById('scrollRoot');
+const spotlightSection = document.getElementById('spotlightSection');
+const spotlightRow = document.getElementById('spotlightRow');
+const trendingSection = document.getElementById('trendingSection');
+const trendingRow = document.getElementById('trendingRow');
+const newSection = document.getElementById('newSection');
+const newRow = document.getElementById('newRow');
+const gridSection = document.getElementById('gridSection');
+const productsGrid = document.getElementById('productsGrid');
+const gridCount = document.getElementById('gridCount');
+
 const searchInput = document.getElementById('searchInput');
 const clearSearchBtn = document.getElementById('clearSearchBtn');
 const searchLoader = document.getElementById('searchLoader');
 const toastEl = document.getElementById('toast');
 
-const storyViewer = document.getElementById('storyViewer');
-const progressRow = document.getElementById('progressRow');
-const viewerAvatarImg = document.getElementById('viewerAvatarImg');
-const viewerUsername = document.getElementById('viewerUsername');
-const viewerCloseBtn = document.getElementById('viewerCloseBtn');
-const viewerStage = document.getElementById('viewerStage');
-const viewerMedia = document.getElementById('viewerMedia');
-const storyCaption = document.getElementById('storyCaption');
-const captionTitle = document.getElementById('captionTitle');
-const captionDesc = document.getElementById('captionDesc');
-const holdIndicator = document.getElementById('holdIndicator');
-const zoneLeft = document.getElementById('zoneLeft');
-const zoneCenter = document.getElementById('zoneCenter');
-const zoneRight = document.getElementById('zoneRight');
-const viewerWaBtn = document.getElementById('viewerWaBtn');
-const viewerFbBtn = document.getElementById('viewerFbBtn');
-const viewerTtBtn = document.getElementById('viewerTtBtn');
+const productModalOverlay = document.getElementById('productModalOverlay');
+const productModalCard = document.getElementById('productModalCard');
+const productModalClose = document.getElementById('productModalClose');
+const productModalImg = document.getElementById('productModalImg');
+const productModalBrand = document.getElementById('productModalBrand');
+const productModalTitle = document.getElementById('productModalTitle');
+const productModalDesc = document.getElementById('productModalDesc');
+const productModalPrice = document.getElementById('productModalPrice');
+const productModalActions = document.getElementById('productModalActions');
 
 const adminEntryBtn = document.getElementById('adminEntryBtn');
 const adminIcon = document.getElementById('adminIcon');
+const fabAddBtn = document.getElementById('fabAddBtn');
 
 const promoOverlay = document.getElementById('promoOverlay');
 const promoCloseBtn = document.getElementById('promoCloseBtn');
@@ -812,61 +896,84 @@ const panelInitial = document.getElementById('panelInitial');
 const panelPreview = document.getElementById('panelPreview');
 const selectFileBtn = document.getElementById('selectFileBtn');
 const fileInput = document.getElementById('fileInput');
+const uploadCard = document.getElementById('uploadCard');
 const previewImg = document.getElementById('previewImg');
 const filterRow = document.getElementById('filterRow');
 const titleInput = document.getElementById('titleInput');
+const priceInput = document.getElementById('priceInput');
+const brandInput = document.getElementById('brandInput');
 const descInput = document.getElementById('descInput');
 const backBtn = document.getElementById('backBtn');
 const shareBtn = document.getElementById('shareBtn');
-const uploadCard = document.getElementById('uploadCard');
 
 /* ============================================================
    BOOTSTRAP
    ============================================================ */
 async function bootstrap() {
   MasterDatabase = await ContentDatabase.getRecords();
-  FeedPool = randomizeArray(MasterDatabase);
-  renderFeed(FeedPool);
-  renderStoriesRow();
-  setupScrollObserver();
+  seqCounter = MasterDatabase.length;
+  renderAllLayouts();
   bindEvents();
 }
 
 /* ============================================================
-   FEED RENDERING
+   RENDER — ALL LAYOUTS  (one shared database, three views)
    ============================================================ */
-function renderFeed(items, appendMode = false) {
-  if (!appendMode) feedContainer.innerHTML = '';
+function renderAllLayouts() {
+  renderSpotlight(MasterDatabase);
+  renderRow(trendingRow, [...MasterDatabase].sort((a, b) => b.price - a.price));
+  renderRow(newRow, [...MasterDatabase].sort((a, b) => (b._seq ?? 0) - (a._seq ?? 0)));
+  renderGrid(MasterDatabase);
+}
+
+function renderSpotlight(items) {
+  spotlightRow.innerHTML = '';
+  items.forEach((item) => spotlightRow.appendChild(buildSpotlightCard(item)));
+}
+
+function renderRow(trackEl, items) {
+  trackEl.innerHTML = '';
+  items.forEach((item) => trackEl.appendChild(buildRowCard(item)));
+}
+
+function renderGrid(items) {
+  productsGrid.innerHTML = '';
+  gridCount.textContent = items.length ? `${items.length} item${items.length === 1 ? '' : 's'}` : '';
 
   if (items.length === 0) {
-    const card = el('div', 'card empty-state');
-    card.style.flexDirection = 'column';
-    card.style.gap = '10px';
+    const empty = el('div', 'grid-empty');
     const icon = document.createElement('i');
     icon.className = 'fa-solid fa-cloud-bolt';
-    const msg = el('p', null, 'Nothing matched your search.');
-    card.append(icon, msg);
-    feedContainer.appendChild(card);
+    empty.append(icon, el('p', null, 'Nothing matched your search.'));
+    productsGrid.appendChild(empty);
     return;
   }
 
-  items.forEach((item) => {
-    feedContainer.appendChild(buildFeedCard(item));
+  items.forEach((item, i) => {
+    const tile = buildGridTile(item);
+    tile.style.animationDelay = Math.min(i * 45, 400) + 'ms';
+    productsGrid.appendChild(tile);
   });
-
-  const trigger = el('div', 'scroll-trigger');
-  feedContainer.appendChild(trigger);
 }
 
-function buildFeedCard(item) {
-  const card = el('div', 'card');
-
+/* ============================================================
+   CARD BUILDERS
+   ============================================================ */
+function buildMediaImg(item) {
   const img = document.createElement('img');
   img.className = 'media';
   img.alt = item.name;
   img.style.filter = resolveFilterCss(item);
   img.src = resolveMediaUrl(item);
+  img.loading = 'lazy';
+  img.decoding = 'async';
   img.addEventListener('error', () => handleImageFallback(img, item.name), { once: true });
+  return img;
+}
+
+function buildSpotlightCard(item) {
+  const card = el('div', 'spotlight-card');
+  const img = buildMediaImg(item);
   card.appendChild(img);
 
   const playBadge = el('div', 'play-badge');
@@ -874,22 +981,72 @@ function buildFeedCard(item) {
   playIcon.className = 'fa-solid fa-play';
   playBadge.appendChild(playIcon);
   card.appendChild(playBadge);
-  bindDoubleTapToOpen(img, playBadge, item);
+  bindTapHandlers(card, img, playBadge, item);
 
-  card.appendChild(el('div', 'card-scrim'));
+  card.appendChild(el('div', 'scrim'));
 
-  const info = el('div', 'card-info');
+  const info = el('div', 'info');
+  info.appendChild(el('div', 'brand-pill', item.brand));
   info.appendChild(el('h3', null, item.name));
   info.appendChild(el('p', null, item.desc));
+  const price = el('span', 'price-chip');
+  price.textContent = formatPrice(item.price);
+  info.appendChild(price);
   card.appendChild(info);
 
-  const actions = el('div', 'actions');
-  actions.appendChild(buildActionBtn('btn-wa', 'fa-brands fa-whatsapp', 'Share via WhatsApp', item.links.whatsapp));
-  actions.appendChild(buildActionBtn('btn-fb', 'fa-brands fa-facebook-f', 'View on Facebook', item.links.facebook));
-  actions.appendChild(buildActionBtn('btn-tt', 'fa-brands fa-tiktok', 'Watch on TikTok', item.links.tiktok));
-  card.appendChild(actions);
+  return card;
+}
+
+function buildRowCard(item) {
+  const card = el('div', 'row-card');
+  const img = buildMediaImg(item);
+  card.appendChild(img);
+
+  const playBadge = el('div', 'play-badge sm');
+  const playIcon = document.createElement('i');
+  playIcon.className = 'fa-solid fa-play';
+  playBadge.appendChild(playIcon);
+  card.appendChild(playBadge);
+  bindTapHandlers(card, img, playBadge, item);
+
+  card.appendChild(el('div', 'scrim'));
+  card.appendChild(buildQuickWaBtn(item));
+
+  const info = el('div', 'info');
+  info.appendChild(el('h4', null, item.name));
+  const price = el('span', 'price-chip');
+  price.textContent = formatPrice(item.price);
+  info.appendChild(price);
+  card.appendChild(info);
 
   return card;
+}
+
+function buildGridTile(item) {
+  const tile = el('div', 'grid-tile');
+  tile.dataset.productId = item.id;
+  const img = buildMediaImg(item);
+  tile.appendChild(img);
+
+  const playBadge = el('div', 'play-badge sm');
+  const playIcon = document.createElement('i');
+  playIcon.className = 'fa-solid fa-play';
+  playBadge.appendChild(playIcon);
+  tile.appendChild(playBadge);
+  bindTapHandlers(tile, img, playBadge, item);
+
+  tile.appendChild(el('div', 'scrim'));
+  tile.appendChild(buildQuickWaBtn(item));
+  tile.appendChild(el('div', 'grid-price-badge', 'Cheapest'));
+
+  const info = el('div', 'info');
+  info.appendChild(el('h4', null, item.name));
+  const price = el('span', 'price-chip');
+  price.textContent = formatPrice(item.price);
+  info.appendChild(price);
+  tile.appendChild(info);
+
+  return tile;
 }
 
 function buildActionBtn(cls, iconCls, title, url) {
@@ -902,11 +1059,29 @@ function buildActionBtn(cls, iconCls, title, url) {
   return btn;
 }
 
+function buildQuickWaBtn(item) {
+  const btn = el('button', 'quick-wa-btn');
+  btn.title = 'Order via WhatsApp';
+  const icon = document.createElement('i');
+  icon.className = 'fa-brands fa-whatsapp';
+  btn.appendChild(icon);
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const { x, y } = getRelativeCenter(btn);
+    spawnSparkBurst(x, y, 10, '#25D366');
+    openExternal(item.links.whatsapp);
+  });
+  return btn;
+}
+
 /* ============================================================
-   DOUBLE-TAP-TO-OPEN  (feed image → each item's own link)
+   TAP GESTURES  (single tap → quick-view popup · double tap →
+   open that product's own link, exactly like the VibeStream
+   feed's double-tap-to-open, reused across every layout)
    ============================================================ */
-function bindDoubleTapToOpen(img, playBadge, item) {
-  let lastTapTime = 0;
+function bindTapHandlers(cardRoot, img, playBadge, item) {
+  let tapCount = 0;
+  let tapTimer = null;
   let downX = 0, downY = 0;
 
   img.addEventListener('pointerdown', (e) => {
@@ -919,76 +1094,129 @@ function bindDoubleTapToOpen(img, playBadge, item) {
     const movedY = Math.abs(e.clientY - downY);
     if (movedX > 10 || movedY > 10) return; // was a scroll/drag, not a tap
 
-    const now = Date.now();
-    if (now - lastTapTime < 300) {
-      lastTapTime = 0;
-      handleImageDoubleTap(img, playBadge, item, e.clientX, e.clientY);
+    tapCount++;
+    if (tapCount === 1) {
+      const cx = e.clientX, cy = e.clientY;
+      tapTimer = setTimeout(() => {
+        tapCount = 0;
+        openProductQuickView(item, cardRoot);
+      }, 300);
     } else {
-      lastTapTime = now;
+      clearTimeout(tapTimer);
+      tapCount = 0;
+      handleImageDoubleTap(cardRoot, playBadge, item, e.clientX, e.clientY);
     }
   });
 }
 
-function handleImageDoubleTap(img, playBadge, item, clientX, clientY) {
+function handleImageDoubleTap(cardRoot, playBadge, item, clientX, clientY) {
   playBadge.classList.remove('pulse');
   void playBadge.offsetWidth; // restart animation on rapid re-taps
   playBadge.classList.add('pulse');
   playBadge.addEventListener('animationend', () => playBadge.classList.remove('pulse'), { once: true });
 
-  spawnTapRipple(img, clientX, clientY);
+  spawnTapRipple(cardRoot, clientX, clientY);
+  const rect = cardRoot.getBoundingClientRect();
+  const appRect = document.getElementById('app').getBoundingClientRect();
+  spawnSparkBurst((clientX ?? rect.left + rect.width / 2) - appRect.left, (clientY ?? rect.top + rect.height / 2) - appRect.top, 8, '#feda75');
   openExternal(item.link);
 }
 
-function spawnTapRipple(img, clientX, clientY) {
-  const card = img.closest('.card');
-  if (!card) return;
-  const rect = card.getBoundingClientRect();
+function spawnTapRipple(cardRoot, clientX, clientY) {
+  const rect = cardRoot.getBoundingClientRect();
   const cx = (clientX !== undefined ? clientX : rect.left + rect.width / 2) - rect.left;
   const cy = (clientY !== undefined ? clientY : rect.top + rect.height / 2) - rect.top;
-  const heart = el('div', 'heart-burst');
-  heart.style.left = (cx - 28) + 'px';
-  heart.style.top = (cy - 28) + 'px';
+  const ripple = el('div', 'tap-ripple');
+  ripple.style.left = (cx - 21) + 'px';
+  ripple.style.top = (cy - 21) + 'px';
   const icon = document.createElement('i');
   icon.className = 'fa-solid fa-arrow-up-right-from-square';
-  icon.style.fontSize = '38px';
-  heart.appendChild(icon);
-  card.appendChild(heart);
-  heart.addEventListener('animationend', () => heart.remove(), { once: true });
+  ripple.appendChild(icon);
+  cardRoot.appendChild(ripple);
+  ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
 }
 
 /* ============================================================
-   INFINITE LOOP (feed)
+   PRODUCT QUICK-VIEW MODAL  (single tap on any card)
    ============================================================ */
-function setupScrollObserver() {
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.remove();
-        appendContinuousLoop();
-      }
-    });
-  }, { root: feedContainer, threshold: 0.1 });
+function openProductQuickView(item) {
+  productModalImg.onerror = () => handleImageFallback(productModalImg, item.name);
+  productModalImg.src = resolveMediaUrl(item);
+  productModalImg.style.filter = resolveFilterCss(item);
+  productModalBrand.textContent = item.brand;
+  productModalTitle.textContent = item.name;
+  productModalDesc.textContent = item.desc;
+  productModalPrice.textContent = formatPrice(item.price);
 
-  const rebindTrigger = () => {
-    const trigger = document.querySelector('.scroll-trigger');
-    if (trigger) observer.observe(trigger);
-  };
+  productModalActions.innerHTML = '';
+  productModalActions.appendChild(buildActionBtn('btn-wa', 'fa-brands fa-whatsapp', 'Order via WhatsApp', item.links.whatsapp));
+  productModalActions.appendChild(buildActionBtn('btn-fb', 'fa-brands fa-facebook-f', 'View on Facebook', item.links.facebook));
+  productModalActions.appendChild(buildActionBtn('btn-tt', 'fa-brands fa-tiktok', 'Watch on TikTok', item.links.tiktok));
 
-  const structuralMutation = new MutationObserver(rebindTrigger);
-  structuralMutation.observe(feedContainer, { childList: true });
-  rebindTrigger();
+  productModalCard.scrollTop = 0;
+  productModalOverlay.classList.add('active');
 }
-
-function appendContinuousLoop() {
-  if (MasterDatabase.length === 0) return;
-  const segment = randomizeArray(MasterDatabase).slice(0, 3);
-  renderFeed(segment, true);
+function closeProductQuickView() {
+  productModalOverlay.classList.remove('active');
 }
 
 /* ============================================================
-   SEARCH  (filters the feed only — the stories row always shows everyone)
+   CELEBRATION EFFECTS  (confetti · sparks · firework bursts)
+   ============================================================ */
+function spawnSparkBurst(x, y, count = 10, color = '#feda75') {
+  const container = document.getElementById('app');
+  for (let i = 0; i < count; i++) {
+    const spark = document.createElement('span');
+    spark.className = 'spark-particle';
+    spark.style.color = color;
+    const angle = (Math.PI * 2 * i) / count + Math.random() * 0.4;
+    const dist = 26 + Math.random() * 26;
+    spark.style.setProperty('--dx', (Math.cos(angle) * dist) + 'px');
+    spark.style.setProperty('--dy', (Math.sin(angle) * dist) + 'px');
+    spark.style.left = x + 'px';
+    spark.style.top = y + 'px';
+    container.appendChild(spark);
+    spark.addEventListener('animationend', () => spark.remove(), { once: true });
+  }
+}
+function spawnConfettiBurst(x, y, count = 24) {
+  const colors = ['#feda75', '#fa7e1e', '#d62976', '#962fbf', '#4f5bd5', '#25D366'];
+  const container = document.getElementById('app');
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement('span');
+    piece.className = 'confetti-piece';
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 60 + Math.random() * 100;
+    const dx = Math.cos(angle) * distance;
+    const dy = Math.sin(angle) * distance - 50; // bias upward
+    piece.style.setProperty('--dx', dx + 'px');
+    piece.style.setProperty('--dy', dy + 'px');
+    piece.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.left = x + 'px';
+    piece.style.top = y + 'px';
+    container.appendChild(piece);
+    piece.addEventListener('animationend', () => piece.remove(), { once: true });
+  }
+}
+function spawnFireworkBurst(x, y) {
+  const colors = ['#feda75', '#fa7e1e', '#d62976', '#962fbf', '#4f5bd5'];
+  spawnSparkBurst(x, y, 16, colors[Math.floor(Math.random() * colors.length)]);
+  setTimeout(() => spawnSparkBurst(x, y, 12, colors[Math.floor(Math.random() * colors.length)]), 140);
+  setTimeout(() => spawnConfettiBurst(x, y, 14), 90);
+}
+
+/* ============================================================
+   SEARCH  (smarter scored search — same algorithm as VibeStream,
+   extended to score the brand field too. Filters the grid layout
+   and dims the curated layouts while active. When a query matches
+   more than one product, the results smoothly relocate themselves
+   cheapest-first after a 3-second pause, with a FLIP transition
+   and a firework settle effect.)
    ============================================================ */
 let searchDebounce;
+let relocateTimer = null;
+
 function bindSearchEvents() {
   searchInput.addEventListener('input', (e) => {
     const q = e.target.value.trim();
@@ -1006,7 +1234,14 @@ function bindSearchEvents() {
 }
 
 async function runSearch(queryText) {
-  if (!queryText) { renderFeed(FeedPool); return; }
+  clearTimeout(relocateTimer);
+
+  if (!queryText) {
+    isSearchActive = false;
+    setCuratedSectionsVisible(true);
+    renderGrid(MasterDatabase);
+    return;
+  }
 
   searchLoader.style.display = 'block';
   clearSearchBtn.style.display = 'none';
@@ -1019,195 +1254,101 @@ async function runSearch(queryText) {
     let score = 0;
     const nameStr = record.name.toLowerCase();
     const descStr = record.desc.toLowerCase();
+    const brandStr = (record.brand || '').toLowerCase();
     if (nameStr === q) score += 200;
+    if (brandStr === q) score += 150;
     if (descStr.includes(q)) score += 80;
     if (nameStr.includes(q)) score += 60;
-    tokens.forEach((t) => { if (nameStr.includes(t)) score += 25; if (descStr.includes(t)) score += 10; });
+    if (brandStr.includes(q)) score += 45;
+    tokens.forEach((t) => {
+      if (nameStr.includes(t)) score += 25;
+      if (brandStr.includes(t)) score += 18;
+      if (descStr.includes(t)) score += 10;
+    });
     return { ...record, _score: score };
   }).filter((r) => r._score > 0).sort((a, b) => b._score - a._score);
 
-  renderFeed(matches);
+  isSearchActive = true;
+  setCuratedSectionsVisible(false);
+  renderGrid(matches);
   searchLoader.style.display = 'none';
   clearSearchBtn.style.display = 'flex';
-}
 
-/* ============================================================
-   STORIES ROW
-   ============================================================ */
-function renderStoriesRow() {
-  storiesRow.innerHTML = '';
-  storiesRow.appendChild(buildAddStoryRing());
-  MasterDatabase.forEach((record, idx) => storiesRow.appendChild(buildStoryRing(record, idx)));
-}
-
-function buildAddStoryRing() {
-  const wrap = el('button', 'story-avatar-wrap add-story');
-  wrap.type = 'button';
-  wrap.setAttribute('aria-label', 'Add a story');
-  const ring = el('div', 'story-ring');
-  const icon = el('div', 'add-icon');
-  const i = document.createElement('i');
-  i.className = 'fa-solid fa-plus';
-  icon.appendChild(i);
-  ring.appendChild(icon);
-  wrap.appendChild(ring);
-  wrap.appendChild(el('span', 'username', 'Your Story'));
-  wrap.addEventListener('click', handleAddStoryClick);
-  return wrap;
-}
-
-function buildStoryRing(record, idx) {
-  const wrap = el('button', 'story-avatar-wrap');
-  wrap.type = 'button';
-  wrap.setAttribute('aria-label', `View ${record.name}'s story`);
-  const ring = el('div', 'story-ring' + (record._seen ? '' : ' has-unseen'));
-  const bg = el('div', 'ring-bg');
-  const img = document.createElement('img');
-  img.alt = record.name;
-  img.src = resolveMediaUrl(record);
-  img.style.filter = resolveFilterCss(record);
-  img.addEventListener('error', () => handleImageFallback(img, record.name), { once: true });
-  bg.appendChild(img);
-  ring.appendChild(bg);
-  wrap.appendChild(ring);
-  wrap.appendChild(el('span', 'username', record.name));
-  wrap.addEventListener('click', () => openViewer(idx));
-  return wrap;
-}
-
-function markRingSeen(dbIdx) {
-  const wrap = storiesRow.children[dbIdx + 1]; // +1: slot 0 is the add-story ring
-  const ring = wrap && wrap.querySelector('.story-ring');
-  if (ring) ring.classList.remove('has-unseen');
-}
-
-/* ============================================================
-   STORY VIEWER
-   ============================================================ */
-function openViewer(startIdx) {
-  if (MasterDatabase.length === 0) return;
-  const all = MasterDatabase.map((_, i) => i);
-  storyOrder = all.slice(startIdx).concat(all.slice(0, startIdx));
-  isViewerOpen = true;
-  storyViewer.classList.add('open');
-  buildProgressSegments();
-  showStoryAtPos(0);
-}
-
-function buildProgressSegments() {
-  progressRow.innerHTML = '';
-  storyOrder.forEach(() => {
-    const track = el('div', 'progress-track');
-    track.appendChild(el('div', 'progress-fill'));
-    progressRow.appendChild(track);
-  });
-}
-
-function showStoryAtPos(pos) {
-  cancelAnimationFrame(progressRAF);
-  currentStoryPos = pos;
-  const dbIdx = storyOrder[pos];
-  const record = MasterDatabase[dbIdx];
-
-  const tracks = progressRow.querySelectorAll('.progress-track');
-  tracks.forEach((t, i) => {
-    t.classList.toggle('complete', i < pos);
-    const fill = t.querySelector('.progress-fill');
-    if (i >= pos) fill.style.width = '0%';
-  });
-
-  const mediaUrl = resolveMediaUrl(record);
-  viewerMedia.onerror = () => handleImageFallback(viewerMedia, record.name);
-  viewerMedia.src = mediaUrl;
-  viewerMedia.style.filter = resolveFilterCss(record);
-  viewerAvatarImg.onerror = () => handleImageFallback(viewerAvatarImg, record.name);
-  viewerAvatarImg.src = mediaUrl;
-  viewerUsername.textContent = record.name;
-  captionTitle.textContent = record.name;
-  captionDesc.textContent = record.desc;
-  storyCaption.classList.remove('show');
-  requestAnimationFrame(() => storyCaption.classList.add('show'));
-
-  viewerWaBtn.onclick = () => openExternal(record.links.whatsapp);
-  viewerFbBtn.onclick = () => openExternal(record.links.facebook);
-  viewerTtBtn.onclick = () => openExternal(record.links.tiktok);
-
-  if (!record._seen) {
-    record._seen = true;
-    markRingSeen(dbIdx);
+  // Same search term shared by multiple products → after a short pause,
+  // relocate the grid so the cheapest match settles first.
+  if (matches.length > 1) {
+    relocateTimer = setTimeout(() => relocateGridByPrice(queryText, matches), 3000);
   }
-
-  elapsedBeforeHold = 0;
-  storyStartedAt = performance.now();
-  isHeld = false;
-  runProgressLoop();
 }
 
-function runProgressLoop() {
-  const tick = (now) => {
-    if (!isViewerOpen) return;
-    if (isHeld) { progressRAF = requestAnimationFrame(tick); return; }
-    const elapsed = elapsedBeforeHold + (now - storyStartedAt);
-    const pct = Math.min(100, (elapsed / STORY_DURATION) * 100);
-    const fill = progressRow.children[currentStoryPos] && progressRow.children[currentStoryPos].querySelector('.progress-fill');
-    if (fill) fill.style.width = pct + '%';
-    if (elapsed >= STORY_DURATION) { goToNextStory(); return; }
-    progressRAF = requestAnimationFrame(tick);
-  };
-  progressRAF = requestAnimationFrame(tick);
+function setCuratedSectionsVisible(visible) {
+  [spotlightSection, trendingSection, newSection].forEach((section) => {
+    section.classList.toggle('hidden-by-search', !visible);
+  });
 }
 
-function goToNextStory() {
-  if (currentStoryPos < storyOrder.length - 1) showStoryAtPos(currentStoryPos + 1);
-  else closeViewer();
-}
-function goToPrevStory() {
-  showStoryAtPos(currentStoryPos > 0 ? currentStoryPos - 1 : 0);
-}
-function closeViewer() {
-  cancelAnimationFrame(progressRAF);
-  isViewerOpen = false;
-  storyViewer.classList.remove('open');
-  storyViewer.style.transform = '';
-  storyViewer.style.opacity = '';
+/* ============================================================
+   SMART-SEARCH PRICE RELOCATE  (FLIP re-order + firework settle)
+   ============================================================ */
+function relocateGridByPrice(queryAtSchedule, currentMatches) {
+  if (!isSearchActive || searchInput.value.trim() !== queryAtSchedule) return; // query changed — skip stale relocation
+  const sorted = [...currentMatches].sort((a, b) => a.price - b.price);
+  flipReorderGrid(sorted);
 }
 
-function startHold() {
-  if (!isViewerOpen || isHeld) return;
-  isHeld = true;
-  elapsedBeforeHold += performance.now() - storyStartedAt;
-  storyViewer.classList.add('holding');
-}
-function endHold() {
-  if (!isHeld) return;
-  isHeld = false;
-  storyStartedAt = performance.now();
-  storyViewer.classList.remove('holding');
-}
-function handleZonePointerUp(zone) {
-  endHold();
-  if (zone === 'left') goToPrevStory();
-  else if (zone === 'right') goToNextStory();
-  else handleCenterTap();
-}
-function handleCenterTap() {
-  const now = Date.now();
-  if (now - lastTapTime < 300) triggerHeartBurst(lastPointerPos.x, lastPointerPos.y);
-  lastTapTime = now;
-}
-function triggerHeartBurst(clientX, clientY) {
-  const rect = viewerStage.getBoundingClientRect();
-  const cx = (clientX !== undefined ? clientX : rect.left + rect.width / 2) - rect.left;
-  const cy = (clientY !== undefined ? clientY : rect.top + rect.height / 2) - rect.top;
-  const heart = el('div', 'heart-burst');
-  heart.style.left = (cx - 28) + 'px';
-  heart.style.top = (cy - 28) + 'px';
-  const icon = document.createElement('i');
-  icon.className = 'fa-solid fa-heart';
-  heart.appendChild(icon);
-  viewerStage.appendChild(heart);
-  heart.addEventListener('animationend', () => heart.remove(), { once: true });
-  showToast('❤️ Liked', 1000);
+function flipReorderGrid(sortedItems) {
+  const tiles = Array.from(productsGrid.querySelectorAll('.grid-tile'));
+  if (tiles.length < 2) return;
+
+  // FIRST: record current positions
+  const firstRects = new Map();
+  tiles.forEach((tile) => firstRects.set(tile.dataset.productId, tile.getBoundingClientRect()));
+
+  // LAST: reorder the actual DOM nodes to the sorted order
+  sortedItems.forEach((item) => {
+    const tile = productsGrid.querySelector(`[data-product-id="${item.id}"]`);
+    if (tile) productsGrid.appendChild(tile);
+  });
+
+  // INVERT: jump back instantly using a transform offset
+  const newTiles = Array.from(productsGrid.querySelectorAll('.grid-tile'));
+  newTiles.forEach((tile) => {
+    const first = firstRects.get(tile.dataset.productId);
+    if (!first) return;
+    const last = tile.getBoundingClientRect();
+    const dx = first.left - last.left;
+    const dy = first.top - last.top;
+    if (dx || dy) {
+      tile.style.transition = 'none';
+      tile.style.transform = `translate(${dx}px, ${dy}px)`;
+      tile.style.zIndex = '3';
+    }
+  });
+
+  // PLAY: release the transform with a spring transition, staggered
+  requestAnimationFrame(() => {
+    newTiles.forEach((tile, i) => {
+      tile.style.transition = `transform 650ms var(--ease-spring) ${i * 35}ms`;
+      tile.style.transform = '';
+    });
+  });
+
+  setTimeout(() => {
+    newTiles.forEach((tile) => {
+      tile.style.zIndex = '';
+      tile.classList.add('price-settled');
+      tile.addEventListener('animationend', () => tile.classList.remove('price-settled'), { once: true });
+    });
+
+    const cheapestBadge = newTiles[0] && newTiles[0].querySelector('.grid-price-badge');
+    if (cheapestBadge) cheapestBadge.classList.add('show');
+
+    if (newTiles[0]) {
+      const { x, y } = getRelativeCenter(newTiles[0]);
+      spawnFireworkBurst(x, y);
+    }
+    showToast('Sorted by cheapest first 💰', 1800);
+  }, 750);
 }
 
 /* ============================================================
@@ -1219,7 +1360,7 @@ function setAdminUI() {
   adminLoginForm.style.display = isAdmin ? 'none' : 'flex';
   adminLogoutBtn.style.display = isAdmin ? 'block' : 'none';
   adminLoginTitle.textContent = isAdmin ? 'Admin Mode' : 'Admin Login';
-  adminLoginSub.textContent = isAdmin ? "You're signed in as admin." : 'Sign in to upload and manage stories.';
+  adminLoginSub.textContent = isAdmin ? "You're signed in as admin." : 'Sign in to add and manage products.';
 }
 function openAdminLogin() {
   adminLoginError.textContent = '';
@@ -1252,9 +1393,10 @@ function handleAdminLogout() {
 }
 
 /* ============================================================
-   UPLOAD GATE  (admin → real uploader · everyone else → promo)
+   ADD-PRODUCT GATE  (admin → real uploader · everyone else →
+   promo overlay pointing them to WhatsApp)
    ============================================================ */
-function handleAddStoryClick() {
+function handleAddProductClick() {
   if (isAdmin) openUploadOverlay();
   else openPromoOverlay();
 }
@@ -1272,6 +1414,8 @@ function closeUploadOverlay() {
   uploadOverlay.classList.remove('active');
   pendingUploadDataUrl = null;
   titleInput.value = '';
+  priceInput.value = '';
+  brandInput.value = '';
   descInput.value = '';
   selectedFilterId = 'normal';
 }
@@ -1314,10 +1458,12 @@ function buildFilterRow() {
     filterRow.appendChild(chip);
   });
 }
-function shareStory() {
+function shareProduct() {
   if (!pendingUploadDataUrl) { showToast('Choose a photo first'); return; }
-  const title = titleInput.value.trim() || 'Untitled';
-  const desc = descInput.value.trim();
+  const title = titleInput.value.trim() || 'Untitled product';
+  const price = parseFloat(priceInput.value) || 0;
+  const brand = brandInput.value.trim() || 'Unbranded';
+  const desc = descInput.value.trim() || 'No description available';
 
   const newRecord = {
     id: 'admin_' + Date.now(),
@@ -1325,23 +1471,25 @@ function shareStory() {
     dataUrl: pendingUploadDataUrl,
     filter: selectedFilterId,
     name: title,
+    brand: brand,
+    price: price,
     desc: desc,
     link: '#',
+    _seq: seqCounter++,
     links: {
       whatsapp: buildWaLink(ADMIN_CONFIG.whatsappNumber, `Inquiry about "${title}"`),
       facebook: '#',
       tiktok: '#'
-    },
-    _seen: false
+    }
   };
 
   MasterDatabase.unshift(newRecord);
-  FeedPool.unshift(newRecord);
-  renderFeed(FeedPool);
-  renderStoriesRow();
+  renderAllLayouts();
   closeUploadOverlay();
-  showToast('Story published ✨');
-  setTimeout(() => openViewer(0), 380);
+  scrollRoot.scrollTo({ top: 0, behavior: 'smooth' });
+  showToast('Product published ✨');
+  const appEl = document.getElementById('app');
+  spawnConfettiBurst(appEl.clientWidth / 2, 150, 28);
 }
 function wireDragDrop(targetEl, onDrop, dragClassEl) {
   targetEl.addEventListener('dragover', (e) => { e.preventDefault(); dragClassEl.classList.add('drag-active'); });
@@ -1368,55 +1516,7 @@ function showToast(msg, duration = 2200) {
    EVENT BINDING
    ============================================================ */
 function bindEvents() {
-  [[zoneLeft, 'left'], [zoneCenter, 'center'], [zoneRight, 'right']].forEach(([zoneEl, zone]) => {
-    zoneEl.addEventListener('pointerdown', (e) => {
-      if (!isViewerOpen) return;
-      startHold();
-      if (zone === 'center') lastPointerPos = { x: e.clientX, y: e.clientY };
-    });
-    zoneEl.addEventListener('pointerup', () => { if (isViewerOpen) handleZonePointerUp(zone); });
-    zoneEl.addEventListener('pointercancel', () => endHold());
-    zoneEl.addEventListener('pointerleave', () => { if (isHeld) endHold(); });
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (!isViewerOpen) return;
-    if (e.key === 'ArrowLeft') goToPrevStory();
-    else if (e.key === 'ArrowRight') goToNextStory();
-    else if (e.key === 'Escape') closeViewer();
-    else if (e.key === ' ') { e.preventDefault(); isHeld ? endHold() : startHold(); }
-  });
-
-  viewerCloseBtn.addEventListener('click', closeViewer);
-
-  let touchStartY = 0, touchStartX = 0, isSwipingDown = false;
-  viewerStage.addEventListener('touchstart', (e) => {
-    touchStartY = e.touches[0].clientY;
-    touchStartX = e.touches[0].clientX;
-    isSwipingDown = false;
-  }, { passive: true });
-  viewerStage.addEventListener('touchmove', (e) => {
-    if (!isViewerOpen) return;
-    const dy = e.touches[0].clientY - touchStartY;
-    const dx = e.touches[0].clientX - touchStartX;
-    if (Math.abs(dy) > 30 && Math.abs(dy) > Math.abs(dx) * 1.2 && dy > 0) {
-      isSwipingDown = true;
-      const progress = Math.min(Math.max(dy / 300, 0), 1);
-      storyViewer.style.transform = `translateY(${dy * 0.5}px)`;
-      storyViewer.style.opacity = String(1 - progress * 0.5);
-    }
-  }, { passive: true });
-  viewerStage.addEventListener('touchend', (e) => {
-    if (!isViewerOpen) return;
-    if (isSwipingDown) {
-      const dy = e.changedTouches[0].clientY - touchStartY;
-      storyViewer.style.transform = '';
-      storyViewer.style.opacity = '';
-      isSwipingDown = false;
-      if (dy > 100) closeViewer();
-    }
-  }, { passive: true });
-
+  fabAddBtn.addEventListener('click', handleAddProductClick);
   adminEntryBtn.addEventListener('click', openAdminLogin);
   adminLoginCloseBtn.addEventListener('click', closeAdminLogin);
   adminLoginForm.addEventListener('submit', handleAdminLoginSubmit);
@@ -1432,7 +1532,7 @@ function bindEvents() {
   adminLoginOverlay.addEventListener('click', (e) => { if (e.target === adminLoginOverlay) closeAdminLogin(); });
 
   promoCloseBtn.addEventListener('click', closePromoOverlay);
-  promoWaBtn.addEventListener('click', () => openExternal(buildWaLink(ADMIN_CONFIG.whatsappNumber, "Hi! I'd like to submit a photo to be featured as a story.")));
+  promoWaBtn.addEventListener('click', () => openExternal(buildWaLink(ADMIN_CONFIG.whatsappNumber, "Hi! I'd like to submit a product to be listed.")));
   promoAdminLoginLink.addEventListener('click', () => { closePromoOverlay(); openAdminLogin(); });
   promoOverlay.addEventListener('click', (e) => { if (e.target === promoOverlay) closePromoOverlay(); });
 
@@ -1440,16 +1540,22 @@ function bindEvents() {
   selectFileBtn.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', (e) => { handleFile(e.target.files[0]); e.target.value = ''; });
   backBtn.addEventListener('click', () => showUploadPanel('initial'));
-  shareBtn.addEventListener('click', shareStory);
+  shareBtn.addEventListener('click', shareProduct);
   uploadOverlay.addEventListener('click', (e) => { if (e.target === uploadOverlay) closeUploadOverlay(); });
   wireDragDrop(panelInitial, handleFile, uploadCard);
+
+  productModalClose.addEventListener('click', closeProductQuickView);
+  productModalOverlay.addEventListener('click', (e) => { if (e.target === productModalOverlay) closeProductQuickView(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && productModalOverlay.classList.contains('active')) closeProductQuickView();
+  });
 
   bindSearchEvents();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   bootstrap();
-  console.log('✨ VibeStream + Stories, merged: shared GitHub-backed content, admin-gated uploads, WhatsApp promo gate.');
+  console.log('✨ Nasiriyah Premium — GitHub-backed catalog, admin-gated uploads, WhatsApp promo gate.');
 });
 </script>
 </body>
